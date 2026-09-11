@@ -84,6 +84,39 @@ Consequences for code in this repo:
 - The API is CORS-aware and token/session-authenticated in a way a static
   origin can use.
 
+## Repository layout
+
+A monorepo. Every stage of the system lives in one tree, versioned together.
+
+```
+docs/
+  adrs/       architecture decision records — immutable once accepted
+  planning/   design and planning documents — living, kept current
+api/          the Django backend: ingestion, parsing, preparation,
+              retrieval, the grounding agent, and the HTTP API
+pages/        frontend code; one subdirectory per statically hosted page,
+              all calling the same backend
+sources/      the original documents, as ingested
+ops/          deployment, infrastructure, monitoring, runbooks
+dev/          local development environment and seed data
+```
+
+Rules that follow from it:
+
+- **ADRs are immutable.** Once accepted, a record is never edited to match
+  later reality. A changed decision is a new ADR; the superseded one gets its
+  `Status` line updated to point at the replacement, and nothing else.
+- **Planning documents are living.** When an implementation diverges from a
+  document in `docs/planning/`, update the document in the same change.
+- **Sources are immutable.** Files in `sources/` are never edited in place;
+  corrections arrive as new files. Derived artifacts are regenerable and are
+  not committed.
+- **Pages do not become a second source of truth.** Everything needed to
+  render a grounded answer — spans, anchors, links — comes from the API.
+- **`dev/` and `ops/` share a contract.** Local and deployed environments use
+  the same service names and configuration variables; shared definitions are
+  shared, not duplicated.
+
 ## Contributing agents: ground rules
 
 - **Commits are allowed on request, and only on request.** For this project
@@ -92,6 +125,11 @@ Consequences for code in this repo:
   message or an explicit standing instruction. Absent that, leave changes in
   the working tree and report them. Never commit as a cleanup step, never
   amend or rebase shared history unasked, and never push unless asked.
+- **Commit messages follow Conventional Commits.** `type(scope): subject`,
+  with the scope optional — `feat`, `fix`, `chore`, `docs`, `refactor`,
+  `test`, `build`, `ci`, `perf`. Breaking changes use `!` before the colon
+  and a `BREAKING CHANGE:` trailer. Keep the subject on one line, and use
+  the body to say why the change was made rather than restating the diff.
 - **Do not add dependencies casually.** This project will be public and
   audited; each dependency needs a reason.
 - **Do not silently widen scope.** If a task reveals adjacent work, finish
@@ -103,8 +141,9 @@ Consequences for code in this repo:
 
 Do not treat these as settled; raise them rather than picking silently.
 
-- Repository layout: how the pipeline stages map onto Django apps and
-  packages, and where frontend code lives.
+- How pipeline stages map onto Django apps and packages inside `api/`.
+- Whether large source documents stay in git, move to Git LFS, or move to
+  object storage addressed by checksum.
 - Coding conventions: testing strategy, prompt management, API schema style,
   fixtures, tooling.
 - The runtime agent's concrete behavior rules — how grounded answers are

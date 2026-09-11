@@ -82,8 +82,6 @@ celerybeat.pid
 # ---------------------------------------------------------------------------
 *.dump
 *.sql.gz
-/pgdata/
-/data/postgres/
 
 # ---------------------------------------------------------------------------
 # Secrets & configuration
@@ -115,16 +113,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Build output
-frontend/dist/
-frontend/build/
-frontend/.output/
-frontend/.vite/
-frontend/.next/
-frontend/.nuxt/
-frontend/.svelte-kit/
-frontend/.astro/
-frontend/storybook-static/
+# Build output (one subdirectory per page under pages/)
+pages/*/dist/
+pages/*/build/
+.output/
+.vite/
+.next/
+.nuxt/
+.svelte-kit/
+.astro/
+storybook-static/
 
 # Tooling caches
 .eslintcache
@@ -147,15 +145,18 @@ test-results/
 # ---------------------------------------------------------------------------
 # GroundSource working artifacts
 # ---------------------------------------------------------------------------
-# Ingested sources and derived preparation output are regenerable and are
-# never committed. Small, deliberate test fixtures live under evals/ or
-# tests/ and are exempted where needed.
-/sources/
+# Derived preparation output is regenerable and is never committed.
+# sources/ is deliberately NOT ignored: the original documents are tracked.
 /artifacts/
 /prepared/
 /indexes/
 *.embeddings
 *.faiss
+
+# Local development state (disposable)
+/dev/data/
+/dev/.state/
+pgdata/
 
 # ---------------------------------------------------------------------------
 # Editors, OS, tooling
