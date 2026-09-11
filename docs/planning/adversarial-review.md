@@ -15,6 +15,10 @@ Read it as a threat model, not a verdict. Most of what follows is
 survivable; the point is to decide which risks are accepted deliberately
 rather than discovered in a lawsuit.
 
+Companions: [`initial-thinking.md`](initial-thinking.md) is the plan under
+attack here, and [`prior-art.md`](prior-art.md) surveys who has already built
+parts of it.
+
 ---
 
 ## 0. The summary, if nothing else is read

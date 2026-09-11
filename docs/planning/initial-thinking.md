@@ -18,6 +18,12 @@ is what `docs/adrs/` is for.
 2026-09-10 and are carried over as given. Re-verify before they influence
 anything that costs money.**
 
+Two companion documents argue with this one from opposite directions:
+[`prior-art.md`](prior-art.md) asks which parts of it somebody has already
+built, and [`adversarial-review.md`](adversarial-review.md) asks how the
+whole thing gets hurt. Both are living documents; when a proposal here moves,
+check whether it moves them too.
+
 ---
 
 ## 1. Where this is going, and what to build against
@@ -297,6 +303,48 @@ between a citation a user can click and a citation the system can verify.
 
 Open: PDF text extraction rarely yields stable offsets for free. Deciding the
 extraction tool is effectively deciding how trustworthy the anchors are.
+
+### The extraction stage is not hand-rolled, and not yet decided
+
+Turning a PDF into a structured tree with usable offsets is the hardest part
+of this pipeline and the part most thoroughly solved by other people. The
+working assumption is therefore a library rather than a bespoke parser; the
+candidates and the criteria are in [`prior-art.md`](prior-art.md) §4.2.
+
+The friction: those libraries recover structure with layout models, so
+"parsing" becomes a model-backed pass, while invariant 7 in `AGENTS.md`
+places parsing on the deterministic side of the line. Two constraints shrink
+that problem to something manageable.
+
+**The input is narrow.** Born-digital, cleanly numbered legal text with a
+real text layer. No OCR, no scans, no recovered columns. That is the case
+layout models handle most confidently, and it is also the case where plain
+rules over the numbering may do most of the work unaided.
+
+**The parse runs once.** For a released document, extraction happens a single
+time and its output is stored as a checksummed artifact that the database
+loads rather than owns. Anchor stability then comes from never re-deriving
+the tree, which is a stronger guarantee than determinism: determinism
+promises that a second run agrees with the first, while freezing the artifact
+means there is no second run. Three rules keep that true — ingest loads an
+existing artifact for a given source checksum and pipeline version unless
+explicitly told to re-derive; a re-parse produces a new version with a diff
+that a human reviews, never a silent replacement; and the artifact lives
+outside the database, so that an empty database is a restore rather than a
+re-derivation. Development is unaffected: the fixture and the development
+document are re-parsed freely, and the freeze applies only to a document that
+has been published.
+
+A pleasant side effect is that the heavy document-AI dependency belongs to
+the ingestion path only. Nothing in the serving image needs it, which is most
+of what made it objectionable under the dependency rule in `AGENTS.md`.
+
+**What cannot be settled from a desk.** Whether a layout model earns its
+place over regexes across the numbering, and how much either approach
+actually recovers, depends on what comes out of a real document. The decision
+is empirical: run both against a rung-1 and a rung-2 candidate, look at the
+tree and the offsets, and choose on the evidence. Until that has been done,
+treat this section as the shape of the stage rather than a choice about it.
 
 ---
 
@@ -616,6 +664,12 @@ proposal:
   database.
 - Hybrid retrieval with Reciprocal Rank Fusion.
 - Anchoring strategy: character offsets into canonical text plus a page map.
+- The extraction stage: which library (or none) parses the PDF, and the
+  parse-once-and-freeze model that makes the choice survivable — see
+  [`prior-art.md`](prior-art.md) §4.2.
+- How far the unit model borrows from Akoma Ntoso: its element vocabulary,
+  its identifier discipline, or neither — see [`prior-art.md`](prior-art.md)
+  §4.1.
 - LLM provider and the interface boundary that keeps it swappable.
 - The document ladder: which fixture and development documents the pipeline
   is built against, and why the target is not one of them.
@@ -649,7 +703,13 @@ Raised by this reshaping:
   with no context.
 
 - How character offsets survive PDF extraction, and which extractor makes
-  anchors verifiable rather than merely plausible.
+  anchors verifiable rather than merely plausible. Not answerable on paper:
+  it needs a real document run through the candidates and the resulting tree
+  inspected.
+- What happens when the one frozen parse turns out to be wrong — a reviewed
+  patch layer kept as a separate artifact, or re-parsing as the only
+  permitted fix. Invariant 3 forbids hand-editing derived data, and a frozen
+  tree is exactly the thing someone will want to hand-edit.
 - Whether repository documentation stays English while the product is
   Spanish, and whether that split holds as contributors arrive.
 - Which extraction path the HTML rendition is generated from, and how its

@@ -9,6 +9,11 @@ This is a living document in the sense of `README.md` for this directory.
 Projects move: stars, maintenance and feature sets below are as of the date
 in the status line and should be re-checked before any of them is adopted.
 
+Companions: [`initial-thinking.md`](initial-thinking.md) is the plan this
+surveys, and [`adversarial-review.md`](adversarial-review.md) is the attack
+on it. The two proposals in §4 are summarised back into
+[`initial-thinking.md`](initial-thinking.md) §5 and §14.
+
 ---
 
 ## 0. The verdict
@@ -162,24 +167,52 @@ than from feature lists:
    character range can be derived from and tested against? A library that
    returns clean text without provenance is disqualified regardless of how
    good the text is — invariant 2.
-2. **Determinism.** Modern layout parsers are ML models. Invariant 7 requires
-   parsing and anchoring to be deterministic and tested as such. Either the
-   model version is pinned and the output proves reproducible on fixed
-   input, or that invariant needs rewording before the library is adopted.
-   This tension is real and should be resolved deliberately, not discovered
-   in a flaky test.
+2. **Spanish and legal shape** — accents, hyphenation across line breaks,
+   numbered hierarchies, footnotes, tables. Everything here is born-digital
+   text with a real text layer; OCR quality is not a criterion because OCR
+   is not in scope.
 3. **License and redistribution**, since the repository will be public.
-4. **Dependency weight.** `AGENTS.md` forbids adding dependencies casually,
-   and the heavier document-AI stacks pull in large model dependencies. The
-   cost is paid by every contributor and every deployment.
-5. **Spanish and legal shape** — accents, hyphenation across line breaks,
-   numbered hierarchies, footnotes, tables.
+4. **Dependency weight**, though less than it first appears. See below.
+5. **Determinism**, demoted. See below.
+
+### Why determinism stopped being the deciding criterion
+
+Modern layout parsers are ML models, which sits badly with invariant 7's
+claim that parsing is deterministic. Two constraints defuse that, and they
+are recorded in `initial-thinking.md` §5 as part of the plan rather than as a
+property of any particular library:
+
+- The input is narrow — born-digital, cleanly numbered legal text, no OCR —
+  which keeps a layout model far from the decision boundaries where small
+  numerical differences flip a discrete label.
+- A released document is parsed **once**, and the resulting tree is stored as
+  a checksummed artifact that the database loads rather than owns. Anchor
+  stability then comes from never re-deriving, which is stronger than
+  determinism rather than weaker: determinism promises a second run agrees
+  with the first; freezing means there is no second run.
+
+What remains is a process risk, not a model risk: something re-deriving the
+tree by accident — a fresh deploy, an empty database, a test that rebuilds
+its own golden file. The mitigations are cheap and belong in the ingestion
+command's design, not in the choice of library.
+
+The dependency-weight criterion softens for the same reason. A one-shot
+ingestion tool does not belong in the serving image at all; the heavy stack
+runs in the ingestion path, and `api/` at runtime depends on Postgres and the
+stored artifact.
 
 The rung-1 fixture document exists for exactly this: whichever library is
 chosen, it is judged by whether the parsed tree and the offsets survive a
 committed golden file, not by its README. That makes §15's open question
 about committing the fixture's parsed tree a prerequisite for this choice
 rather than an independent one.
+
+**And the choice is not made here.** Whether a layout model earns its place
+over plain rules across the numbering — and how much either recovers from a
+real Spanish legal PDF — is an empirical question that a survey of READMEs
+cannot answer. Run the candidates against a rung-1 and a rung-2 document,
+inspect the tree and the offsets, decide on that. This section narrows the
+field and states what to measure; it does not pick a winner.
 
 ---
 
@@ -236,9 +269,13 @@ Added to the list in `initial-thinking.md` §14:
 
 - **How far the unit model adopts Akoma Ntoso** — vocabulary, identifier
   scheme, or serialisation — and what is deliberately left out.
-- **Which ingestion library performs extraction**, judged against the
-  criteria in §4.2, including how the determinism tension with invariant 7 is
-  resolved.
+- **Which ingestion library performs extraction** — or whether rules over the
+  numbering beat one — judged against the criteria in §4.2 and decided on
+  measurements taken from a real document.
+- **The parse-once-and-freeze model**: the parsed tree as a checksummed
+  artifact held outside the database, ingest that loads rather than
+  re-derives, and re-parsing as a reviewed new version. This is what lets
+  invariant 7 stand while a model-backed pass sits inside the parsing stage.
 - **Whether anchors are expressed in a portable format** (PAWLS-like, or an
   Akoma Ntoso identifier scheme) or remain internal to this project.
 
