@@ -65,6 +65,7 @@ Use these terms consistently in code, schemas, and prose.
 
 Settled:
 
+- **License:** Apache 2.0. Contributions are made under it; see `LICENSE`.
 - **Backend:** Python + Django.
 - **Database:** PostgreSQL. It also holds the structural tree, spans, and
   preparation artifacts; vector storage is expected to live there too
@@ -154,4 +155,3 @@ Do not treat these as settled; raise them rather than picking silently.
 - Link format for resolving anchors in the original document (page + offset
   for PDFs, fragment identifiers for HTML).
 - Multi-document / corpus support beyond the single-document case.
-- License.

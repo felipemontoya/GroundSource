@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "description": "GroundSource reference page: a static build that talks to the API over HTTP.",
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

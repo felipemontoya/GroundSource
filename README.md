@@ -109,7 +109,8 @@ below.
 
 ## Open decisions
 
-Settled: the backend is Python + Django over PostgreSQL.
+Settled: the backend is Python + Django over PostgreSQL, and the code is
+licensed under Apache 2.0.
 
 Still open:
 
@@ -118,4 +119,14 @@ Still open:
 - Model providers for the preparation passes and for the chat agent.
 - Vector storage: pgvector in the same database, or a dedicated index.
 - Whether the first release ships a reference frontend or API only.
-- License.
+
+## License
+
+[Apache License 2.0](LICENSE). Permissive, with an explicit patent grant and
+a requirement that modifications be marked — which suits a tool whose whole
+claim is that its output can be traced.
+
+The license covers the code. It does not cover the documents in `sources/`:
+those carry whatever terms their publisher attached, and `NOTICE` says so.
+Each document's redistributability is checked before it is added, per
+`sources/README.md`.

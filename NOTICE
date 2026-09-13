@@ -1,0 +1,19 @@
+GroundSource
+Copyright 2026 The GroundSource Authors
+
+This product includes software developed by the GroundSource Authors,
+licensed under the Apache License, Version 2.0. See LICENSE.
+
+---
+
+Source documents
+
+The license above covers this repository's code and documentation. It does
+not cover the documents under `sources/`, which are third-party works
+carrying whatever terms their publishers attached. They are included so that
+answers can be traced to the exact bytes they were drawn from; each one is
+checked for redistributability before it is added, and its origin and
+checksum are recorded alongside it. See `sources/README.md`.
+
+Nothing in this repository asserts ownership of, or additional rights over,
+those documents.
