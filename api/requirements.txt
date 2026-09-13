@@ -16,3 +16,19 @@ psycopg[binary]~=3.3
 # The [standard] extra brings uvloop/httptools (the usual production choice)
 # and watchfiles, which is what makes --reload work in the dev container.
 uvicorn[standard]~=0.52.0
+
+# pgvector's Django integration: a VectorField and index classes, so the
+# vector column is described in migrations like every other column instead
+# of in hand-written SQL scattered through the app.
+pgvector~=0.5.0
+
+# PDF extraction. MIT, built on pdfminer.six, and it exposes every
+# character's page and bounding box — which is the provenance the offset
+# invariant needs. Docling was measured instead of assumed: it installs
+# 6.2 GB (3.2 GB of it CUDA) for a layout model this born-digital document
+# does not need. See grounding/extraction.py for the full reasoning.
+pdfplumber~=0.11.10
+
+# Embeddings and chat completion. One provider, behind grounding/llm.py, so
+# that the provider choice stays a single file rather than a commitment.
+openai~=3.13.0

@@ -51,9 +51,14 @@ def root(request: HttpRequest) -> HttpResponse:
     """Identify the service. No document endpoints exist yet, by design."""
     payload = {
         "service": SERVICE,
-        "status": "skeleton",
-        "detail": "Stack scaffolding only. No ingestion, retrieval, or chat endpoints yet.",
-        "endpoints": {"health": "/health"},
+        "status": "proof-of-concept",
+        "detail": "One document, ingested and answerable. No conversation state, no streaming.",
+        "endpoints": {
+            "health": "/health",
+            "sources": "/sources",
+            "outline": "/sources/<slug>/outline",
+            "ask": "POST /sources/<slug>/ask",
+        },
     }
     return HttpResponse(
         json.dumps(payload, indent=2) + "\n",
