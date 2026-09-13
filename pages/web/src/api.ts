@@ -17,13 +17,98 @@ export interface Health {
   checks: Record<string, Check>;
 }
 
-export async function fetchHealth(signal?: AbortSignal): Promise<Health> {
-  const response = await fetch(`${BASE_URL}/health`, {
+export interface SourceSummary {
+  slug: string;
+  title: string;
+  filename: string;
+  sha256: string;
+  pages: number | null;
+  characters: number;
+  units: number;
+  embedded_units: number;
+  language: string;
+  extractor: string;
+  pipeline_version: string;
+  ingested_at: string;
+}
+
+export interface SourcesResponse {
+  sources: SourceSummary[];
+  provider_configured: boolean;
+}
+
+/** A verbatim run of the document, with the anchor that locates it. */
+export interface Citation {
+  unit_id: number;
+  path: string;
+  page_start: number | null;
+  page_end: number | null;
+  start_offset: number;
+  end_offset: number;
+  text: string;
+}
+
+export interface Claim {
+  statement: string;
+  /** "quotation" restates one extract; "interpretation" reads across them. */
+  kind: "quotation" | "interpretation";
+  supported: boolean;
+  citations: Citation[];
+}
+
+export interface RetrievedUnit {
+  unit_id: number;
+  path: string;
+  page_start: number | null;
+  page_end: number | null;
+  start_offset: number;
+  end_offset: number;
+  kind: string;
+  heading: string;
+  preview: string;
+}
+
+export interface Answer {
+  question: string;
+  abstained: boolean;
+  abstention_reason: string | null;
+  claims: Claim[];
+  retrieved: RetrievedUnit[];
+  notes: string[];
+  model: string | null;
+  usage: { input_tokens: number | null; output_tokens: number | null } | null;
+}
+
+async function getJSON<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, {
     signal,
     headers: { Accept: "application/json" },
   });
-  // A failing check answers 503 with the same shape, so the body is worth
-  // reading either way; only a non-JSON answer is a transport failure.
-  const body = (await response.json()) as Health;
-  return body;
+  return (await response.json()) as T;
+}
+
+export function fetchHealth(signal?: AbortSignal): Promise<Health> {
+  return getJSON<Health>("/health", signal);
+}
+
+export function fetchSources(signal?: AbortSignal): Promise<SourcesResponse> {
+  return getJSON<SourcesResponse>("/sources", signal);
+}
+
+export async function ask(
+  slug: string,
+  question: string,
+  signal?: AbortSignal,
+): Promise<Answer> {
+  const response = await fetch(`${BASE_URL}/sources/${slug}/ask`, {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ question }),
+  });
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body?.error ?? `The API answered ${response.status}`);
+  }
+  return body as Answer;
 }

@@ -6,6 +6,8 @@
   --rule: #dcd9d2;
   --good: #2f7d4f;
   --bad: #b03030;
+  --quote-bg: #f2efe7;
+  --quote-rule: #b9b2a2;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -17,6 +19,8 @@
     --rule: #2e3138;
     --good: #6fc08e;
     --bad: #e08080;
+    --quote-bg: #1e2128;
+    --quote-rule: #4a4f5a;
   }
 }
 
@@ -119,4 +123,216 @@ pre {
   padding: 0.75rem;
   overflow-x: auto;
   font-size: 0.82rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Chat surface
+   ------------------------------------------------------------------------ */
+
+.docbar {
+  margin: 1.5rem 0 0;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.docbar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.docbar select {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.3rem 0.4rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  max-width: 100%;
+}
+
+.provenance {
+  margin: 0.4rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-word;
+}
+
+.warn {
+  margin: 0.6rem 0 0;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid var(--bad);
+  background: color-mix(in srgb, var(--bad) 8%, transparent);
+  font-size: 0.86rem;
+}
+
+.transcript {
+  margin: 1.5rem 0 7rem;
+}
+
+.turn {
+  margin: 0 0 2.25rem;
+}
+
+.question {
+  margin: 0 0 1rem;
+  font-size: 1.08rem;
+  font-weight: 600;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--ink);
+}
+
+.claim {
+  margin: 0 0 1.35rem;
+}
+
+.claim.unsupported {
+  opacity: 0.75;
+}
+
+.statement {
+  margin: 0 0 0.55rem;
+}
+
+/* Quotation is the document speaking. Nothing else on the page uses a
+   serif face or this background, so the eye can separate the two without
+   reading a word. */
+blockquote {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-left: 3px solid var(--quote-rule);
+  background: var(--quote-bg);
+}
+
+blockquote p {
+  margin: 0;
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-style: normal;
+  font-size: 0.76rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ink-soft);
+}
+
+.tag {
+  display: inline-block;
+  margin-right: 0.45rem;
+  padding: 0.08rem 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+  vertical-align: 0.1em;
+}
+
+.abstention {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.abstention .label {
+  font-weight: 600;
+}
+
+.notes {
+  margin: 0.75rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.meta {
+  margin: 0.8rem 0 0;
+  font-size: 0.8rem;
+}
+
+.dim {
+  color: var(--ink-soft);
+}
+
+.linkish {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.retrieved {
+  margin: 0.6rem 0 0;
+  padding-left: 1.3rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.retrieved li {
+  margin-bottom: 0.35rem;
+}
+
+.anchor {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-right: 0.5rem;
+}
+
+.composer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.composer > * {
+  font: inherit;
+}
+
+.composer input {
+  flex: 1;
+  min-width: 0;
+  max-width: 40rem;
+  margin-left: auto;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.composer button {
+  margin-right: auto;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--ink);
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.composer button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
