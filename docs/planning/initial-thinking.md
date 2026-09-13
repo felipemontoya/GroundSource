@@ -240,6 +240,25 @@ that `ops/` can reference the same images without a second definition
 drifting away from the first. Ingested sources and derived artifacts are
 mounted, not baked into images.
 
+### What the scaffold actually pinned
+
+The stack now exists in the tree with no product code in it: `dev/compose.yaml`
+brings up three services and the page reports the backend's health. What that
+first pass chose, where the table above left a choice open:
+
+| Choice | Pinned | Why, or what is still open |
+|---|---|---|
+| ASGI server | uvicorn (`[standard]`) | The table offered uvicorn or granian. Nothing measured; uvicorn is the boring one and `watchfiles` gives reload in the container. |
+| PostgreSQL | `pgvector/pgvector:pg17` | pg17 over pg18 because hosting support lags a major release. pgvector 0.8.6, `pg_trgm`, and an ICU `es` collation are created by `dev/postgres/initdb/`. |
+| Frontend | Vite + React + TypeScript | The framework is still an open decision in `AGENTS.md`; this follows the proposal above rather than settling it. |
+| Tailwind | not added | One stylesheet is enough for a page with no interface. Revisit when there is an interface to style. |
+| Django app layout | none | Deliberately unresolved: the health view sits in the project package, so the open decision stays open. |
+| CORS | not added | The page reaches the API through the dev server's `/api` proxy, so nothing is cross-origin locally — and the proxy keeps a real reverse proxy in the path, which is where the buffering gotcha below shows up. CORS becomes necessary when a static build is hosted on its own origin. |
+
+None of these are ADRs yet. The ones that want to become ADRs once something
+has been measured against them are listed in
+[Decisions that want an ADR](#decisions-that-want-an-adr).
+
 ### Rejected, with reasons worth keeping
 
 - **Static hosts for the backend.** GitHub Pages and Cloudflare Pages serve

@@ -2,7 +2,8 @@
 
 Frontend code. Statically hosted pages that talk to `../api/` over HTTP.
 
-There is one page today, but the directory is plural by intent: several
+There is one page today — [`web/`](web/), the reference page — but the
+directory is plural by intent: several
 distinct front ends — different audiences, different documents, different
 framings — are expected to sit here over time, all speaking to the same
 backend. Each page is its own subdirectory with its own build, so adding the

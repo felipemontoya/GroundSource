@@ -1,0 +1,18 @@
+# Runtime dependencies for the GroundSource backend.
+#
+# Every entry needs a reason (see ../AGENTS.md). Pinned to a compatible
+# release so that a rebuild is reproducible without a lockfile yet.
+
+# The web framework itself. 5.2 is the current LTS.
+Django~=5.2.0
+
+# PostgreSQL driver. psycopg 3 is what Django 5 targets; the binary wheel
+# avoids needing libpq and a C toolchain in the runtime image.
+psycopg[binary]~=3.3
+
+# ASGI server. The stack runs on ASGI from the start because token
+# streaming (SSE) is a Phase 1 requirement and switching servers later
+# would invalidate the local proxy path this environment exists to exercise.
+# The [standard] extra brings uvloop/httptools (the usual production choice)
+# and watchfiles, which is what makes --reload work in the dev container.
+uvicorn[standard]~=0.52.0
