@@ -36,6 +36,14 @@ class Source(models.Model):
     slug = models.SlugField(max_length=128, unique=True)
     title = models.TextField()
 
+    # Which edition this is, in words a reader recognises: "JEP, 2018
+    # typesetting", "Cancillería, 24 Nov 2016". Two typesettings of the same
+    # agreement are two sources, not one source and one substitute — they
+    # paginate differently, and a citation names a page in *this* file. The
+    # title usually comes from PDF metadata and is not reliably distinct, so
+    # this is set by hand at ingest.
+    edition = models.CharField(max_length=200, blank=True, default="")
+
     # --- the immutable original ------------------------------------------
     filename = models.TextField(help_text="Name of the file as ingested.")
     sha256 = models.CharField(max_length=64, db_index=True)

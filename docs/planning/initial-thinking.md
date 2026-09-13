@@ -175,19 +175,52 @@ document. Each is a separate decision, not an assumed continuation.
 
 Applies when rung 3 is reached; none of it blocks earlier work.
 
-- **Use the 24 Nov 2016 version, 310 pages** — the renegotiated text that took
-  effect after the plebiscite.
-- Canonical PDF:
-  `https://www.cancilleria.gov.co/sites/default/files/Fotos2016/12.11_1.2016nuevoacuerdofinal.pdf`
-- **Do not use the 24 Aug 2016 version, 297 pages.** Indexing the superseded
-  text would turn an anti-misinformation tool into a source of it.
+- **Use the 24 Nov 2016 text** — the renegotiated agreement that took effect
+  after the plebiscite.
+- **Do not use the 24 Aug 2016 text.** Indexing the superseded version would
+  turn an anti-misinformation tool into a source of it. This is the only
+  identity question that matters, and it is a question about *which text*,
+  not about which file.
 
-**Ingest-time guard:** assert the page count and the checksum of the fetched
-PDF before any preparation runs. A mismatch aborts ingestion loudly rather
-than producing a plausible-looking index of the wrong document. The checksum
-belongs in a manifest alongside the file in `sources/`, together with the
-retrieval URL and date, so a reader can verify independently that the indexed
-text is the official one.
+### Editions are documents, not approximations of one
+
+An earlier draft of this section treated page count as part of the
+document's identity — 310 pages for the November text, 297 for the August
+one — and treated the Cancillería PDF as the canonical artifact that other
+files approximate. That was wrong, and worth correcting explicitly because
+the error is easy to repeat.
+
+One text can be typeset many times. The JEP's edition of the 24 Nov 2016
+agreement runs to 189 pages of the same words the Cancillería edition sets
+in 310. Neither is a degraded copy of the other; they are two documents a
+reader can hold, with different pagination and different typography, and a
+citation that says "page 47" says it about one of them.
+
+What follows, and what the code now does:
+
+- **A `Source` is an edition.** One file, one checksum, one pagination. Two
+  typesettings of one agreement are two sources, deliberately, and the
+  `edition` field names which is which in words a reader recognises.
+- **A conversation belongs to an edition.** The page keeps one transcript
+  per document and every answer carries the identity of the source that
+  produced it, so an answer is never rendered under a document that did not
+  produce it. Talking to a document means talking to *that* document.
+- **Indexing several editions is a feature, not a hazard.** A reader who
+  wants the edition they are holding gets its page numbers; a reader
+  comparing editions can see where they differ, even if the difference is
+  only styling and pagination.
+
+The durable anchor across editions is the agreement's own numbering, which
+survives re-typesetting. Page numbers are an edition's property and are
+reported as such.
+
+**Ingest-time guard:** assert the *checksum* before any preparation runs — a
+recorded, verifiable claim that this file is the edition it says it is. Page
+count is recorded as a property of the edition, not used as a test of which
+text it contains, since a new typesetting changes it while the words stay
+identical. The checksum belongs in a manifest alongside the file in
+`sources/`, together with the retrieval URL and date, so a reader can verify
+independently which edition was indexed and where it came from.
 
 Size: roughly 200–280k tokens — too large to stuff into context, which is
 what makes retrieval the correct architecture rather than a premature

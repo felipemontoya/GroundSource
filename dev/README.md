@@ -69,6 +69,12 @@ Spanish documents: it selects the PostgreSQL text search configuration, and
 it is per source because the test bed is English and the target document is
 not.
 
+`--edition` names which typesetting a file is — "JEP, 2018", "Cancillería,
+24 Nov 2016". Two editions of one text are two sources on purpose: they
+paginate differently, so a citation's page number only means something under
+the edition that produced it. The page keeps a separate conversation per
+document for the same reason.
+
 ## Asking it things
 
 <http://localhost:5173> once a document is loaded. Or directly:

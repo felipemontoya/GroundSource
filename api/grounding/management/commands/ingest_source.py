@@ -29,6 +29,15 @@ class Command(BaseCommand):
         parser.add_argument("--slug", help="Stable handle. Derived from the filename if omitted.")
         parser.add_argument("--title", help="Overrides the title found in the file's metadata.")
         parser.add_argument(
+            "--edition",
+            default="",
+            help=(
+                "Which edition this file is, in words a reader recognises: "
+                "'JEP, 2018 typesetting'. Two typesettings of one text are two "
+                "sources; this is what tells them apart on screen."
+            ),
+        )
+        parser.add_argument(
             "--language",
             default="english",
             help="PostgreSQL text search configuration, e.g. english or spanish.",
@@ -81,6 +90,7 @@ class Command(BaseCommand):
             source = Source.objects.create(
                 slug=slug,
                 title=options["title"] or result.title or path.stem,
+                edition=options["edition"],
                 filename=path.name,
                 sha256=digest,
                 byte_size=len(data),

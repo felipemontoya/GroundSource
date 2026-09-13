@@ -34,6 +34,12 @@ Endpoints:
 - `POST /sources/<slug>/ask` — `{"question": "..."}` in, a grounded answer or
   an abstention out.
 
+A `Source` is an **edition**: one file, one checksum, one pagination. Two
+typesettings of the same text are two sources, named apart by `--edition`,
+because a citation's page number is a location in a particular file. Every
+answer carries the identity of the source that produced it so that it can
+never be displayed under a document that did not.
+
 Commands: `ingest_source`, `verify_anchors`, `embed_source`. The first two
 are free and need no key; the third costs money. That split is deliberate —
 see `../dev/README.md`.

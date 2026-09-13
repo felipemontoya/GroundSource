@@ -116,6 +116,7 @@ class Claim:
 
 @dataclass
 class Answer:
+    source: Source
     question: str
     abstained: bool
     abstention_reason: str | None
@@ -127,6 +128,18 @@ class Answer:
 
     def as_dict(self) -> dict:
         return {
+            # Identity of the document this answer came out of. An answer
+            # that does not name its own edition can be shown under the
+            # wrong one, and page numbers belong to an edition — so this
+            # travels with every response rather than being inferred from
+            # whatever the page happens to have selected.
+            "source": {
+                "slug": self.source.slug,
+                "title": self.source.title,
+                "edition": self.source.edition,
+                "sha256": self.source.sha256,
+                "pages": self.source.page_count,
+            },
             "question": self.question,
             "abstained": self.abstained,
             "abstention_reason": self.abstention_reason,
@@ -169,6 +182,7 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
 
     if not units:
         return Answer(
+            source=source,
             question=question,
             abstained=True,
             abstention_reason="Nothing in this document matched the question.",
@@ -183,6 +197,7 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
         # generated summary would be anyway.
         notes.append("No answer was generated. The extracts below are the raw retrieval result.")
         return Answer(
+            source=source,
             question=question,
             abstained=True,
             abstention_reason="No model provider is configured, so no answer was composed.",
@@ -200,6 +215,7 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
     except llm.ProviderUnavailable as exc:
         notes.append(f"Answer generation failed: {exc}")
         return Answer(
+            source=source,
             question=question,
             abstained=True,
             abstention_reason="The model provider could not be reached.",
@@ -217,6 +233,7 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
         reason = "No claim survived citation checking, so nothing here is grounded."
 
     return Answer(
+        source=source,
         question=question,
         abstained=abstained,
         abstention_reason=reason if abstained else None,

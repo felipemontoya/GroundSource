@@ -336,3 +336,18 @@ cite {
   opacity: 0.45;
   cursor: default;
 }
+
+.edition {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.note.editions {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+}

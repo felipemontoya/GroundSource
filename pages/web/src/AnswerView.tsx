@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { Answer, Claim, Citation } from "./api";
+import type { Answer, Claim, Citation, SourceSummary } from "./api";
 
 /**
  * Rendering rules that come from the grounding contract, not from taste:
@@ -11,12 +11,29 @@ import type { Answer, Claim, Citation } from "./api";
  * - An abstention is presented as an answer, not as a failure state.
  * - The retrieved passages stay reachable, so a reader can check what the
  *   answer chose not to use.
+ * - An answer is never rendered under a document that did not produce it.
+ *   Page numbers are a property of an edition, so showing an answer beneath
+ *   the wrong one silently misattributes every citation in it.
  */
-export function AnswerView({ answer }: { answer: Answer }) {
+export function AnswerView({
+  answer,
+  expected,
+}: {
+  answer: Answer;
+  expected: SourceSummary;
+}) {
   const [showRetrieved, setShowRetrieved] = useState(false);
+  const misattributed = answer.source.slug !== expected.slug;
 
   return (
     <div className="answer">
+      {misattributed && (
+        <p className="warn">
+          This answer came from <strong>{answer.source.edition || answer.source.title}</strong>,
+          not from the document currently selected. Its section paths and page numbers refer to
+          that edition.
+        </p>
+      )}
       {answer.abstained && (
         <p className="abstention">
           <span className="label">The document does not answer this.</span>{" "}

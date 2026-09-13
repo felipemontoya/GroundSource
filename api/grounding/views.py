@@ -36,6 +36,7 @@ def sources(request: HttpRequest) -> JsonResponse:
             {
                 "slug": source.slug,
                 "title": source.title,
+                "edition": source.edition,
                 "filename": source.filename,
                 "sha256": source.sha256,
                 "pages": source.page_count,
@@ -70,6 +71,7 @@ def outline(request: HttpRequest, slug: str) -> JsonResponse:
         {
             "slug": source.slug,
             "title": source.title,
+            "edition": source.edition,
             "headings": [
                 {
                     "unit_id": unit.pk,

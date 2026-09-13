@@ -20,6 +20,8 @@ export interface Health {
 export interface SourceSummary {
   slug: string;
   title: string;
+  /** Which typesetting this is: "JEP, 2018". Page numbers belong to it. */
+  edition: string;
   filename: string;
   sha256: string;
   pages: number | null;
@@ -68,7 +70,17 @@ export interface RetrievedUnit {
   preview: string;
 }
 
+/** The document an answer came out of, carried by the answer itself. */
+export interface AnswerSource {
+  slug: string;
+  title: string;
+  edition: string;
+  sha256: string;
+  pages: number | null;
+}
+
 export interface Answer {
+  source: AnswerSource;
   question: string;
   abstained: boolean;
   abstention_reason: string | null;
