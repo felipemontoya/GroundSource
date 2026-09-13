@@ -1,8 +1,12 @@
 # pages/web
 
-The reference page. Scaffolding only: it renders the backend's health
-report so that the stack can be seen working end to end, and holds no
-product code yet.
+The reference page: a question box against one document, and an answer
+rendered so that the reader can tell which words are the document's.
+
+What the rendering is doing, and why, is in the docstring at the top of
+`src/AnswerView.tsx` — quotation set apart typographically, anchors under
+every quote, interpretation tagged where it happens, abstention presented
+as an answer rather than an error.
 
 Stack: Vite + React + TypeScript, static build. This follows the proposal in
 `../../docs/planning/initial-thinking.md` §4, but the frontend framework is

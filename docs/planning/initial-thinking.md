@@ -251,13 +251,84 @@ first pass chose, where the table above left a choice open:
 | ASGI server | uvicorn (`[standard]`) | The table offered uvicorn or granian. Nothing measured; uvicorn is the boring one and `watchfiles` gives reload in the container. |
 | PostgreSQL | `pgvector/pgvector:pg17` | pg17 over pg18 because hosting support lags a major release. pgvector 0.8.6, `pg_trgm`, and an ICU `es` collation are created by `dev/postgres/initdb/`. |
 | Frontend | Vite + React + TypeScript | The framework is still an open decision in `AGENTS.md`; this follows the proposal above rather than settling it. |
-| Tailwind | not added | One stylesheet is enough for a page with no interface. Revisit when there is an interface to style. |
-| Django app layout | none | Deliberately unresolved: the health view sits in the project package, so the open decision stays open. |
+| Tailwind | not added | One stylesheet is enough at this size. Revisit when there is more interface to style. |
+| Django app layout | one app, `grounding` | Still not the decision: one app is what a proof of concept needs, and splitting it later is a migration rather than a rewrite. |
 | CORS | not added | The page reaches the API through the dev server's `/api` proxy, so nothing is cross-origin locally — and the proxy keeps a real reverse proxy in the path, which is where the buffering gotcha below shows up. CORS becomes necessary when a static build is hosted on its own origin. |
+| Extraction | `pdfplumber` | See below. |
+| Embeddings | `text-embedding-3-small`, 1536d | Pinned in the schema: pgvector columns have a fixed width, so a second model is a migration. |
+| Answering model | `gpt-5.4-nano` | Comparable in price to the older mini tier and markedly better, so it is the starting point rather than the fallback. Reached through the Responses API with a strict JSON schema. |
 
 None of these are ADRs yet. The ones that want to become ADRs once something
 has been measured against them are listed in
 [Decisions that want an ADR](#decisions-that-want-an-adr).
+
+### Docling, measured
+
+[`prior-art.md`](prior-art.md) §4.2 recommends an ingestion library over
+hand-rolled extraction and names Docling, while insisting the winner be
+picked by measurement rather than by README. The measurement, taken
+2026-09-13: `pip install docling chonkie` lands **6.2 GB** of site-packages
+— 3.2 GB of it NVIDIA CUDA libraries, 1.2 GB torch, 897 MB triton.
+
+That is disqualifying here for a reason more durable than size: **there is
+no GPU on the development machine**, so the layout model would run on CPU
+behind a stack that exists to talk to hardware that is not present. The
+standing rule that follows is worth keeping even when the numbers change —
+*heavy model work happens remotely, behind an API; local containers stay
+small enough to rebuild in seconds.*
+
+`pdfplumber` (MIT, over pdfminer.six) is used instead. It gives every
+character its page and bounding box, which is the provenance invariant 2
+asks for, and for a born-digital PDF with a clean text layer that extraction
+is exact — a layout model would add inference to a problem that does not
+have one.
+
+This is not a general verdict on Docling. It is a verdict on running Docling
+locally, on this machine, against this class of document. `api/grounding/
+extraction.py` keeps an `Extraction` boundary precisely so that a scanned
+document, or a remote extraction service, slots in behind the same contract
+and is judged against a golden file.
+
+### What Phase 0 actually looks like now
+
+Against a 15-page English test document, not against a rung-1 fixture — the
+fixture question in §1 is still open, and this document was to hand.
+
+- **Ingest** — `manage.py ingest_source`: sha256 the bytes, extract canonical
+  text with a page map, parse the numbered hierarchy into 112 units, index
+  them with `to_tsvector` in the source's own language.
+- **Verify** — `manage.py verify_anchors`: re-slice every unit and compare.
+  112/112 matched, 98.4% of the canonical text covered, 0 overlapping
+  anchors.
+- **Embed** — `manage.py embed_source`: separate command, because parsing is
+  free and embedding is not. This is what lets the structural half of the
+  pipeline be iterated on without spending anything.
+- **Retrieve** — dense plus lexical, fused by reciprocal rank. One finding
+  worth keeping: `websearch_to_tsquery` ANDs every term, so "What is the
+  recovery time objective?" matched *nothing*, because no single clause held
+  all three words. The lexical side ORs the question's lexemes and lets
+  `ts_rank_cd` sort out which partial match is best.
+- **Answer** — the model fills a JSON schema with unit ids and offset ranges.
+  There is no field for quoted text. Code slices every range out of the
+  database, rejects one that overflows its unit, drops a claim whose
+  citations all fail, and turns an answer with no surviving claims into an
+  abstention.
+
+Two things that needed fixing once real output existed, both of them in code
+rather than in the prompt:
+
+1. Models count characters badly. Ranges came back a few characters off and
+   produced quotations like `"imes of crisis"`. Ranges are now snapped
+   outwards to whole words and, where one is near, whole sentences — only
+   ever outwards, since a range that shrank could drop the negation or the
+   subject that changes what a passage means.
+2. Snapping first treated newlines as sentence ends, which cut quotations at
+   whatever column the PDF wrapped. Inside a unit a newline is the
+   extractor's, not the document's.
+
+Still missing from Phase 0 as specified: the rung-1 fixture and a committed
+golden file for it. Not in this phase and still not: streaming, conversation
+history, deployment, the target document.
 
 ### Rejected, with reasons worth keeping
 

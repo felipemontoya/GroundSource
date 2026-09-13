@@ -19,34 +19,86 @@ disposable and is not committed.
 ## Starting it
 
 ```
-cp .env.example .env      # optional; the defaults in compose.yaml match it
+cp .env.example .env      # then put the OpenAI key in it
 docker compose up --build
 ```
 
-Three services come up:
+`.env` is read automatically by Compose and is git-ignored. The stack starts
+without a key; what needs one is embedding and answer generation.
+
+Three services come up, and a fourth on demand:
 
 | Service | Image / build | Host port | What it is |
 |---|---|---|---|
 | `db` | `pgvector/pgvector:pg17` | 5432 | PostgreSQL with `pgvector` and `pg_trgm` |
 | `api` | `../api/Dockerfile` | 8000 | Django 5 on ASGI (uvicorn), auto-reloading |
 | `web` | `../pages/web/Dockerfile` (`dev` target) | 5173 | Vite dev server for the reference page |
+| `tools` | `../api/Dockerfile` | — | One-off commands that write into the source tree. Profile `tools`, not started by `up`. |
 
 Then:
 
-- <http://localhost:5173> — the page, which reports the backend's health.
-- <http://localhost:8000/health> — the same report directly from the API.
+- <http://localhost:5173> — the page.
+- <http://localhost:8000/health> — database and `pgvector` health.
+- <http://localhost:8000/sources> — what is ingested, and whether a provider
+  is configured.
 
 The page reaches the API through the dev server's `/api` proxy rather than
 cross-origin. That is deliberate: it keeps a reverse proxy in the local path,
 which is where SSE buffering problems show up, and it means the API does not
 need CORS until a build is hosted on its own origin.
 
+## Loading a document
+
+Ingestion is free and needs no API key; embedding costs money and does.
+They are separate commands for that reason.
+
+```
+# Parse, anchor and index. Deterministic, re-runnable, no key needed.
+docker compose exec api python manage.py ingest_source \
+    "/sources/<file>.pdf" --slug <handle> --language english
+
+# Prove the chain: every unit's indexed text still matches its slice.
+docker compose exec api python manage.py verify_anchors <handle>
+
+# Embed for semantic retrieval. Needs OPENAI_API_KEY.
+docker compose exec api python manage.py embed_source <handle>
+```
+
+`sources/` is mounted read-only at `/sources`. Use `--language spanish` for
+Spanish documents: it selects the PostgreSQL text search configuration, and
+it is per source because the test bed is English and the target document is
+not.
+
+## Asking it things
+
+<http://localhost:5173> once a document is loaded. Or directly:
+
+```
+curl -X POST localhost:8000/sources/<handle>/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "..."}'
+```
+
+The stack is useful at every level of configuration. With no key at all,
+questions return the passages that match lexically. With a key but no
+embeddings, matching is lexical and the answer is generated. With both,
+retrieval is hybrid. Each state is reported rather than hidden.
+
+## Generating migrations
+
+The `api` service mounts the code read-only — it runs the source, it does
+not edit it — so anything that writes into the tree uses the `tools`
+profile instead:
+
+```
+docker compose run --rm tools python manage.py makemigrations
+```
+
 ## What this is not yet
 
-No ingestion, no retrieval, no chat. The stack exists; the pipeline does not.
-The health endpoint checks that PostgreSQL is reachable *and* that `pgvector`
-computes a distance, so a green page means the substrate the pipeline needs
-is actually there.
+No conversation history, no streaming, no rate limiting, no spend cap. All
+four are Phase 1 in `../docs/planning/initial-thinking.md`, and the last two
+have to exist before anything is publicly reachable.
 
 ## Resetting
 
