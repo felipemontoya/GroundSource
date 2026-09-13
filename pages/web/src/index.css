@@ -351,3 +351,44 @@ cite {
   margin: 0.5rem 0 0;
   font-size: 0.8rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Document index
+   ------------------------------------------------------------------------ */
+
+.index {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.index li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.index a {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+.index a:hover {
+  border-bottom-color: var(--ink);
+}
+
+.index .provenance {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.docbar-row .linkish {
+  margin-left: auto;
+}

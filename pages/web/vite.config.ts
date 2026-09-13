@@ -12,6 +12,20 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
+    // Vite refuses requests whose Host it does not recognise, which blocks
+    // an ngrok tunnel with an error that explains nothing. This allows
+    // ngrok's domains, and PUBLIC_HOST for any other one-off tunnel.
+    //
+    // Note what this opens: the dev server becomes reachable by anyone with
+    // the link, with no authentication, and every ingested document is
+    // readable. Share the link knowing that, and close the tunnel after.
+    allowedHosts: [
+      ".ngrok-free.app",
+      ".ngrok-free.dev",
+      ".ngrok.app",
+      ".ngrok.io",
+      ...(process.env.PUBLIC_HOST ? [process.env.PUBLIC_HOST] : []),
+    ],
     proxy: {
       "/api": {
         target: process.env.API_ORIGIN ?? "http://api:8000",

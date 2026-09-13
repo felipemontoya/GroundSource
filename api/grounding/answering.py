@@ -50,6 +50,9 @@ extracts rather than restating one. Mark it "quotation" when it restates \
 what a single extract says.
 - Where the text genuinely supports more than one reading, give both as \
 separate claims rather than choosing.
+- Write your statements in the same language as the question. The quotations \
+are sliced from the document and are never translated, so a statement in one \
+language may well sit above a quotation in another; that is correct.
 """
 
 SCHEMA = {

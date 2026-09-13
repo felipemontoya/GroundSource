@@ -14,6 +14,13 @@ import type { Answer, Claim, Citation, SourceSummary } from "./api";
  * - An answer is never rendered under a document that did not produce it.
  *   Page numbers are a property of an edition, so showing an answer beneath
  *   the wrong one silently misattributes every citation in it.
+ *
+ * Quotations are never translated: they are the document's own text. The
+ * statement above one is in the language of the question, so a Spanish
+ * statement may well head an English quotation, and that is correct.
+ * - An answer is never rendered under a document that did not produce it.
+ *   Page numbers are a property of an edition, so showing an answer beneath
+ *   the wrong one silently misattributes every citation in it.
  */
 export function AnswerView({
   answer,
@@ -29,14 +36,14 @@ export function AnswerView({
     <div className="answer">
       {misattributed && (
         <p className="warn">
-          This answer came from <strong>{answer.source.edition || answer.source.title}</strong>,
-          not from the document currently selected. Its section paths and page numbers refer to
-          that edition.
+          Esta respuesta vino de <strong>{answer.source.edition || answer.source.title}</strong>,
+          , no del documento seleccionado. Sus rutas de sección y números de página se
+          refieren a esa edición.
         </p>
       )}
       {answer.abstained && (
         <p className="abstention">
-          <span className="label">The document does not answer this.</span>{" "}
+          <span className="label">El documento no responde a esto.</span>{" "}
           {answer.abstention_reason}
         </p>
       )}
@@ -55,11 +62,11 @@ export function AnswerView({
 
       <p className="meta">
         <button type="button" className="linkish" onClick={() => setShowRetrieved((v) => !v)}>
-          {showRetrieved ? "Hide" : "Show"} the {answer.retrieved.length} passages considered
+          {showRetrieved ? "Ocultar" : "Ver"} los {answer.retrieved.length} pasajes considerados
         </button>
         {answer.model && <span className="dim"> · {answer.model}</span>}
         {answer.usage?.output_tokens != null && (
-          <span className="dim"> · {answer.usage.output_tokens} output tokens</span>
+          <span className="dim"> · {answer.usage.output_tokens} tokens de salida</span>
         )}
       </p>
 
@@ -84,12 +91,12 @@ function ClaimView({ claim }: { claim: Claim }) {
   return (
     <div className={claim.supported ? "claim" : "claim unsupported"}>
       <p className="statement">
-        {claim.kind === "interpretation" && <span className="tag">reading across clauses</span>}
+        {claim.kind === "interpretation" && <span className="tag">lectura entre cláusulas</span>}
         {claim.statement}
       </p>
       {!claim.supported && (
         <p className="warn">
-          Every citation for this claim failed to resolve, so it is shown unsupported.
+          Ninguna cita de esta afirmación pudo resolverse, así que se muestra sin respaldo.
         </p>
       )}
       {claim.citations.map((citation) => (
@@ -102,14 +109,14 @@ function ClaimView({ claim }: { claim: Claim }) {
 function CitationView({ citation }: { citation: Citation }) {
   const page =
     citation.page_start === citation.page_end
-      ? `p.${citation.page_start}`
-      : `pp.${citation.page_start}–${citation.page_end}`;
+      ? `p. ${citation.page_start}`
+      : `pp. ${citation.page_start}–${citation.page_end}`;
 
   return (
     <blockquote>
       <p>{citation.text}</p>
       <cite>
-        {citation.path && <strong>{citation.path}</strong>} {page} · characters{" "}
+        {citation.path && <strong>{citation.path}</strong>} {page} · caracteres{" "}
         {citation.start_offset}–{citation.end_offset}
       </cite>
     </blockquote>
