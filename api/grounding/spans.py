@@ -87,6 +87,10 @@ def quote_within(source: Source, unit: Unit, start: int, end: int) -> Quote:
 # more than the ragged edge did.
 SENTENCE_REACH = 180
 
+# Newlines are deliberately absent. Inside a unit they are where the PDF
+# wrapped a line, not where the document ended a thought — paragraphs are
+# separate units already. Treating them as boundaries ended quotations
+# mid-sentence, which is the thing this function exists to prevent.
 _SENTENCE_END = (".", "!", "?", "…")
 
 
@@ -113,7 +117,7 @@ def snap(text: str, start: int, end: int) -> tuple[int, int]:
     floor = max(0, start - SENTENCE_REACH)
     sentence_start = None
     for index in range(start - 1, floor - 1, -1):
-        if text[index] in _SENTENCE_END or text[index] == "\n":
+        if text[index] in _SENTENCE_END:
             sentence_start = index + 1
             break
     if sentence_start is not None:
@@ -137,9 +141,6 @@ def snap(text: str, start: int, end: int) -> tuple[int, int]:
     for index in range(end, ceiling):
         if text[index] in _SENTENCE_END:
             sentence_end = index + 1
-            break
-        if text[index] == "\n" and index > end:
-            sentence_end = index
             break
     if sentence_end is not None:
         end = sentence_end
