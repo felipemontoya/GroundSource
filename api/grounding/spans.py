@@ -61,6 +61,13 @@ def quote_within(source: Source, unit: Unit, start: int, end: int) -> Quote:
     in the document. A relative range that overflows its unit is rejected
     here rather than clamped: a clamp would return real text that answers a
     different question, which is worse than returning nothing.
+
+    The range is then snapped outwards to whole words and, where one is
+    close by, to whole sentences. Models count characters badly — in
+    practice they land a few characters off and produce quotations like
+    "imes of crisis" or "…expected to pro". Snapping fixes that in code,
+    which is where it belongs: the model still chooses *where* to point, and
+    still never supplies a single character of what is quoted.
     """
     if start < 0 or end <= start:
         raise SpanError(f"span [{start}:{end}] is not a forward range")
@@ -69,7 +76,80 @@ def quote_within(source: Source, unit: Unit, start: int, end: int) -> Quote:
     if end > length:
         raise SpanError(f"span [{start}:{end}] overflows unit {unit.pk} of length {length}")
 
+    body = source.slice(unit.start_offset, unit.end_offset)
+    start, end = snap(body, start, end)
+
     return _build(source, unit, unit.start_offset + start, unit.start_offset + end)
+
+
+# How far snapping will reach to find a sentence boundary before settling
+# for a word boundary. Beyond this, growing the quotation costs the reader
+# more than the ragged edge did.
+SENTENCE_REACH = 180
+
+_SENTENCE_END = (".", "!", "?", "…")
+
+
+def _sentence_end_after(text: str, index: int) -> int | None:
+    """Offset just past the first sentence terminator at or after `index`."""
+    for position in range(index, len(text)):
+        if text[position] in _SENTENCE_END:
+            return position + 1
+    return None
+
+
+def snap(text: str, start: int, end: int) -> tuple[int, int]:
+    """Widen [start:end] to whole words, and to whole sentences when near.
+
+    Only ever widens. A range that shrinks could drop the negation, the
+    exception, or the subject that changes what the passage means, so the
+    failure mode here is quoting slightly too much.
+    """
+    start = max(0, min(start, len(text)))
+    end = max(start, min(end, len(text)))
+
+    # Back up to the start of the sentence this offset sits in, if it is
+    # within reach; otherwise just to the start of the current word.
+    floor = max(0, start - SENTENCE_REACH)
+    sentence_start = None
+    for index in range(start - 1, floor - 1, -1):
+        if text[index] in _SENTENCE_END or text[index] == "\n":
+            sentence_start = index + 1
+            break
+    if sentence_start is not None:
+        # If the requested range only clipped the last character or two of
+        # that sentence, it was not aiming at it. Backing up would prepend a
+        # whole sentence the reader was never pointed at, so step over it.
+        tail = _sentence_end_after(text, sentence_start)
+        if tail is not None and tail - start <= 3 and tail < end:
+            start = tail
+        else:
+            start = sentence_start
+    else:
+        while start > 0 and not text[start - 1].isspace():
+            start -= 1
+    while start < len(text) and text[start].isspace():
+        start += 1
+
+    # Forward to the end of the sentence, or failing that the end of the word.
+    ceiling = min(len(text), end + SENTENCE_REACH)
+    sentence_end = None
+    for index in range(end, ceiling):
+        if text[index] in _SENTENCE_END:
+            sentence_end = index + 1
+            break
+        if text[index] == "\n" and index > end:
+            sentence_end = index
+            break
+    if sentence_end is not None:
+        end = sentence_end
+    else:
+        while end < len(text) and not text[end].isspace():
+            end += 1
+    while end > start and text[end - 1].isspace():
+        end -= 1
+
+    return start, max(end, start + 1)
 
 
 def _build(source: Source, unit: Unit, start: int, end: int) -> Quote:
