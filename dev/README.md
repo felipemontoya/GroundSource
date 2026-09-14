@@ -18,10 +18,19 @@ disposable and is not committed.
 
 ## Starting it
 
+From the repository root:
+
 ```
-cp .env.example .env      # then put the OpenAI key in it
-docker compose up --build
+cp dev/.env.example dev/.env    # once; then put the OpenAI key in it
+make dev-start                  # or: make dev start
+make dev-stop                   # or: make dev stop
 ```
+
+`make dev-start` builds, starts, and returns once every service is healthy.
+`make dev-stop` removes the containers but keeps the volumes, so ingested
+documents and their embeddings survive a restart. The Makefile is only a
+shortcut; from this directory the equivalent is `docker compose up -d
+--build --wait` and `docker compose down`.
 
 `.env` is read automatically by Compose and is git-ignored. The stack starts
 without a key; what needs one is embedding and answer generation.
