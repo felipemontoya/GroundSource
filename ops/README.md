@@ -146,8 +146,10 @@ cd dev && docker compose run --rm -e RUN_MIGRATIONS=0 -e DATABASE_URL api python
 `make tofu ARGS="output -raw database_external_url"`) prints each day's model calls, the
 questions answered retrieval-only because the cap was reached, and the
 tokens used. `ask_daily_model_limit` in `tofu/variables.tf` is sized for
-USD 10 a month on `gpt-5.4-nano`; recalculate it whenever the model or its
-price changes.
+USD 10 a month on `gpt-6-luna`, from a single production measurement
+(~7,700 input and ~890 output tokens per question); recalibrate it from
+`show_usage` after the first days of real traffic, and whenever the model
+or its price changes.
 
 ## Backups
 

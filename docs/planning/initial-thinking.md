@@ -293,7 +293,7 @@ first pass chose, where the table above left a choice open:
 | CORS | not added | The page reaches the API through the dev server's `/api` proxy, so nothing is cross-origin locally — and the proxy keeps a real reverse proxy in the path, which is where the buffering gotcha below shows up. CORS becomes necessary when a static build is hosted on its own origin. |
 | Extraction | `pdfplumber` | See below. |
 | Embeddings | `text-embedding-3-small`, 1536d | Pinned in the schema: pgvector columns have a fixed width, so a second model is a migration. |
-| Answering model | `gpt-5.4-nano` | Comparable in price to the older mini tier and markedly better, so it is the starting point rather than the fallback. Reached through the Responses API with a strict JSON schema. |
+| Answering model | `gpt-6-luna` | The cheapest current tier, USD 0.10 / 0.50 per million input / output tokens (2026-09-22); it replaced `gpt-5.4-nano`, which costs twice as much. Reached through the Responses API with a strict JSON schema. |
 
 None of these are ADRs yet. The ones that want to become ADRs once something
 has been measured against them are listed in

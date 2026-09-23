@@ -110,16 +110,18 @@ variable "db_admin_cidrs" {
 
 variable "chat_model" {
   type    = string
-  default = "gpt-5.4-nano"
+  default = "gpt-6-luna"
 }
 
 variable "ask_daily_model_limit" {
   description = <<-EOT
     Model calls per UTC day before answers degrade to retrieval-only. The
-    default is sized for USD 10/month on gpt-5.4-nano: measured ~2,600 input
-    and ~530 output tokens per question at USD 0.20 / 1.25 per million is
-    ~USD 0.0012, and USD 10 / 30 days / 0.0012 ≈ 280. Recalculate whenever
-    chat_model changes; `manage.py show_usage` reports the real token counts.
+    default is sized for USD 10/month on gpt-6-luna at USD 0.10 / 0.50 per
+    million input / output tokens. Measured in production on 2026-09-23:
+    ~7,700 input and ~890 output tokens per question, ~USD 0.0012, so
+    USD 10 / 30 days / 0.0012 ≈ 275. One sample; recalibrate from
+    `manage.py show_usage` after real traffic, and whenever chat_model
+    changes.
   EOT
   type        = number
   default     = 250

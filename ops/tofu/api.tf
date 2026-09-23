@@ -63,4 +63,10 @@ resource "render_web_service" "api" {
     ASK_PER_CLIENT_LIMIT          = { value = tostring(var.ask_per_client_limit) }
     ASK_PER_CLIENT_WINDOW_SECONDS = { value = tostring(var.ask_per_client_window_seconds) }
   }
+
+  lifecycle {
+    # Render generated the value once; the configuration only asks for one
+    # to exist. Without this every apply would propose replacing it.
+    ignore_changes = [env_vars["DJANGO_SECRET_KEY"]]
+  }
 }

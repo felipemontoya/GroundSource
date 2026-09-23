@@ -71,6 +71,11 @@ provider "render" {}
 provider "cloudflare" {}
 
 # Credentials come from NAMECHEAP_USER_NAME, NAMECHEAP_API_USER,
-# NAMECHEAP_API_KEY and NAMECHEAP_CLIENT_IP. Configured even when
-# manage_dns is false, but only called when it is true.
-provider "namecheap" {}
+# NAMECHEAP_API_KEY and NAMECHEAP_CLIENT_IP. The provider refuses to start
+# without them even when it manages nothing, so with manage_dns off it gets
+# placeholders it never uses; null defers to the environment.
+provider "namecheap" {
+  user_name = var.manage_dns ? null : "unused"
+  api_user  = var.manage_dns ? null : "unused"
+  api_key   = var.manage_dns ? null : "unused"
+}
