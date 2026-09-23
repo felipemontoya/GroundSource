@@ -226,16 +226,17 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
             notes=notes,
         )
 
-    if not limits.reserve_model_call():
-        # The day's budget is spent. Degrade to what costs nothing, the
-        # passages themselves, rather than to an error: reading the document
-        # is still possible, and that is the point of the tool.
-        notes.append("The daily limit on generated answers was reached. The extracts below are the raw retrieval result.")
+    refusal = limits.reserve_model_call()
+    if refusal:
+        # The budget is spent. Degrade to what costs nothing, the passages
+        # themselves, rather than to an error: reading the document is still
+        # possible, and that is the point of the tool.
+        notes.append(f"{refusal} The extracts below are the raw retrieval result.")
         return Answer(
             source=source,
             question=question,
             abstained=True,
-            abstention_reason="The daily limit on generated answers has been reached; generation resumes tomorrow (UTC).",
+            abstention_reason=refusal,
             claims=[],
             retrieved=units,
             notes=notes,
@@ -252,12 +253,18 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
             instructions=INSTRUCTIONS, prompt=prompt, schema=SCHEMA
         )
     except llm.ProviderUnavailable as exc:
+        # A billed failure counts against the budget like any call; one that
+        # never ran gives its reservation back.
+        if exc.billed:
+            limits.record_tokens(exc.input_tokens, exc.output_tokens)
+        else:
+            limits.release_model_call()
         notes.append(f"Answer generation failed: {exc}")
         return Answer(
             source=source,
             question=question,
             abstained=True,
-            abstention_reason="The model provider could not be reached.",
+            abstention_reason="No answer could be generated: the model provider failed or returned an unusable response.",
             claims=[],
             retrieved=units,
             notes=notes,

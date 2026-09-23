@@ -57,19 +57,27 @@ Each page in `../pages/` is a static site on its own origin, so the API
 answers cross-origin requests from the origins in `CORS_ALLOWED_ORIGINS`
 (`django-cors-headers`, configured from settings only) and from no others.
 
-Two limits keep a public endpoint from spending more than it was given
+Three limits keep a public endpoint from spending more than it was given
 (`grounding/limits.py`):
 
 - **Per client:** `ASK_PER_CLIENT_LIMIT` questions per
   `ASK_PER_CLIENT_WINDOW_SECONDS`, counted in the process cache under a
   salted hash of the address — never the address itself. Over the limit
   the endpoint answers `429`.
-- **Per day:** `ASK_DAILY_MODEL_LIMIT` model calls per UTC day, counted in
-  the database (`DailyUsage`) so a restart does not reset it. Over the limit
-  the endpoint still answers, retrieval-only: the matching passages, no
-  generated text, and a reason saying so.
+- **Per day:** `ASK_DAILY_MODEL_LIMIT` model calls per UTC day, so one busy
+  day cannot spend the month.
+- **Per month, in USD:** spend is estimated from the tokens each call was
+  billed for, at `CHAT_PRICE_*_PER_MTOK`. `ASK_MONTHLY_SOFT_LIMIT_USD` logs a
+  warning when crossed; `ASK_MONTHLY_HARD_LIMIT_USD` stops generation until
+  the next month.
 
-Both are `0` (off) locally. The deployed values live in `../ops/tofu/`.
+Day and month are counted in the database (`DailyUsage`), so a restart does
+not reset them. Past a limit the endpoint still answers, retrieval-only:
+the matching passages, no generated text, and a reason saying so. A call
+that fails without being billed gives its reservation back; one cut short
+at `CHAT_MAX_OUTPUT_TOKENS` was billed and counts.
+
+All are `0` (off) locally. The deployed values live in `../ops/tofu/`.
 
 A deployment that hands out a connection string sets `DATABASE_URL`, which
 takes precedence over the `POSTGRES_*` variables. That split is deliberate —

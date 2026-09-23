@@ -21,7 +21,21 @@ logger = logging.getLogger(__name__)
 
 
 class ProviderUnavailable(RuntimeError):
-    """No usable credentials, or the provider refused. Reported, not swallowed."""
+    """No usable credentials, or the provider refused. Reported, not swallowed.
+
+    When the provider did run and bill the call — a response cut short at
+    the token ceiling — the tokens it reported travel with the error, so
+    the spend can still be counted.
+    """
+
+    def __init__(self, message: str, *, input_tokens: int | None = None, output_tokens: int | None = None):
+        super().__init__(message)
+        self.input_tokens = input_tokens
+        self.output_tokens = output_tokens
+
+    @property
+    def billed(self) -> bool:
+        return self.input_tokens is not None or self.output_tokens is not None
 
 
 @dataclass(frozen=True)
@@ -88,6 +102,10 @@ def complete_json(*, instructions: str, prompt: str, schema: dict) -> Completion
     client = _client()
     model = settings.CHAT_MODEL
 
+    options = {}
+    if settings.CHAT_REASONING_EFFORT:
+        options["reasoning"] = {"effort": settings.CHAT_REASONING_EFFORT}
+
     try:
         response = client.responses.create(
             model=model,
@@ -102,9 +120,22 @@ def complete_json(*, instructions: str, prompt: str, schema: dict) -> Completion
                     "strict": True,
                 }
             },
+            **options,
         )
     except Exception as exc:  # provider, network, or an unknown model name
         raise ProviderUnavailable(f"{type(exc).__name__}: {exc}") from exc
+
+    # A response cut short at the token ceiling carries partial JSON. Name
+    # that, rather than letting it surface as a parse error.
+    if getattr(response, "status", None) == "incomplete":
+        details = getattr(response, "incomplete_details", None)
+        reason = getattr(details, "reason", None) or "unknown reason"
+        usage = getattr(response, "usage", None)
+        raise ProviderUnavailable(
+            f"{model} stopped before finishing its answer ({reason})",
+            input_tokens=getattr(usage, "input_tokens", None),
+            output_tokens=getattr(usage, "output_tokens", None),
+        )
 
     text = getattr(response, "output_text", "") or ""
     if not text.strip():

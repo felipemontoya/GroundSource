@@ -149,7 +149,20 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 EMBEDDING_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "1536"))
 CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-6-luna")
-CHAT_MAX_OUTPUT_TOKENS = int(os.environ.get("CHAT_MAX_OUTPUT_TOKENS", "1200"))
+# Reasoning tokens count against this ceiling. gpt-6-luna at its default
+# effort spent all of 1,200 on reasoning and returned truncated JSON, so the
+# ceiling is generous and the effort is set explicitly. The monthly budget
+# below, not this number, is what holds the bill.
+CHAT_MAX_OUTPUT_TOKENS = int(os.environ.get("CHAT_MAX_OUTPUT_TOKENS", "8000"))
+# Sent as reasoning.effort; empty sends nothing. gpt-6-luna accepts none,
+# low and medium. At low it answered with 0 reasoning tokens and valid
+# citations; medium spent ~750 reasoning tokens for no better answer.
+CHAT_REASONING_EFFORT = os.environ.get("CHAT_REASONING_EFFORT", "low")
+# USD per million tokens for CHAT_MODEL, used only to estimate spend
+# against the monthly limits. They describe the model, so they change with
+# it. Defaults: gpt-6-luna, 2026-09-22.
+CHAT_PRICE_INPUT_PER_MTOK = float(os.environ.get("CHAT_PRICE_INPUT_PER_MTOK", "0.10"))
+CHAT_PRICE_OUTPUT_PER_MTOK = float(os.environ.get("CHAT_PRICE_OUTPUT_PER_MTOK", "0.50"))
 
 # Bumped whenever a change moves offsets or re-shapes the tree. Stored on
 # every derived row so that stale artifacts are identifiable rather than
@@ -165,9 +178,12 @@ RETRIEVAL_CANDIDATES = int(os.environ.get("RETRIEVAL_CANDIDATES", "30"))
 RETRIEVAL_TOP_K = int(os.environ.get("RETRIEVAL_TOP_K", "6"))
 
 # --- usage limits ----------------------------------------------------------
-# See grounding/limits.py. The daily cap on model calls is what holds the
-# bill; 0 disables a limit, which is the local default and never the
+# See grounding/limits.py. The monthly hard limit is what holds the bill;
+# the soft limit only warns; the daily cap keeps one busy day from spending
+# the month. 0 disables a limit, which is the local default and never the
 # deployed one.
+ASK_MONTHLY_SOFT_LIMIT_USD = float(os.environ.get("ASK_MONTHLY_SOFT_LIMIT_USD", "0"))
+ASK_MONTHLY_HARD_LIMIT_USD = float(os.environ.get("ASK_MONTHLY_HARD_LIMIT_USD", "0"))
 ASK_DAILY_MODEL_LIMIT = int(os.environ.get("ASK_DAILY_MODEL_LIMIT", "0"))
 ASK_PER_CLIENT_LIMIT = int(os.environ.get("ASK_PER_CLIENT_LIMIT", "0"))
 ASK_PER_CLIENT_WINDOW_SECONDS = int(os.environ.get("ASK_PER_CLIENT_WINDOW_SECONDS", "3600"))
