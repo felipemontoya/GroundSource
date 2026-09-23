@@ -4,7 +4,7 @@
 
 locals {
   api_target     = "${trimprefix(render_web_service.api.url, "https://")}."
-  acuerdo_target = "${cloudflare_pages_project.acuerdo.subdomain}."
+  acuerdo_target = var.enable_pages ? "${cloudflare_pages_project.acuerdo[0].subdomain}." : null
 
   # Host part relative to the zone: "groundsource.projects", "acuerdo".
   api_host     = trimsuffix(var.api_domain, ".${var.dns_zone}")
@@ -21,7 +21,7 @@ resource "namecheap_domain_host_record" "api" {
 }
 
 resource "namecheap_domain_host_record" "acuerdo" {
-  count    = var.manage_dns ? 1 : 0
+  count    = var.manage_dns && var.enable_pages ? 1 : 0
   domain   = var.dns_zone
   hostname = local.acuerdo_host
   type     = "CNAME"

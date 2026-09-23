@@ -2,6 +2,8 @@
 # by Cloudflare Pages from the same repository.
 
 resource "cloudflare_pages_project" "acuerdo" {
+  count = var.enable_pages ? 1 : 0
+
   account_id        = var.cloudflare_account_id
   name              = "groundsource-acuerdo"
   production_branch = var.branch
@@ -37,7 +39,9 @@ resource "cloudflare_pages_project" "acuerdo" {
 }
 
 resource "cloudflare_pages_domain" "acuerdo" {
+  count = var.enable_pages ? 1 : 0
+
   account_id   = var.cloudflare_account_id
-  project_name = cloudflare_pages_project.acuerdo.name
+  project_name = cloudflare_pages_project.acuerdo[0].name
   name         = var.acuerdo_domain
 }

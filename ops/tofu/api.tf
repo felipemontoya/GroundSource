@@ -4,10 +4,10 @@
 locals {
   # Every page allowed to call the API. Its own domain and its pages.dev
   # address, so the page works before and after DNS.
-  cors_allowed_origins = join(",", [
-    "https://${var.acuerdo_domain}",
-    "https://${cloudflare_pages_project.acuerdo.subdomain}",
-  ])
+  cors_allowed_origins = join(",", concat(
+    ["https://${var.acuerdo_domain}"],
+    [for project in cloudflare_pages_project.acuerdo : "https://${project.subdomain}"],
+  ))
 }
 
 resource "render_web_service" "api" {

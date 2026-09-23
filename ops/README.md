@@ -82,6 +82,11 @@ make tofu ARGS="plan -out=deploy.tfplan"
 make tofu ARGS="apply deploy.tfplan"
 ```
 
+To deploy the backend before Cloudflare is set up, set
+`TF_VAR_enable_pages=false`: the Pages project is left out, and the API
+accepts only `https://acuerdo.felipemontoya.co` as an origin until it is
+turned back on.
+
 Then:
 
 1. **Wait for the first deploy.** Render builds `api/Dockerfile`, runs

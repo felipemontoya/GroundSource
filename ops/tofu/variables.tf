@@ -13,8 +13,19 @@ variable "openai_api_key" {
 }
 
 variable "cloudflare_account_id" {
-  description = "Cloudflare account that owns the Pages projects."
+  description = "Cloudflare account that owns the Pages projects. Needed only with enable_pages."
   type        = string
+  default     = ""
+}
+
+variable "enable_pages" {
+  description = <<-EOT
+    Create the Cloudflare Pages project for the agreement's page. Turn it off
+    to deploy the backend alone, before Cloudflare credentials exist; the
+    API then accepts only the page's own domain as an origin.
+  EOT
+  type        = bool
+  default     = true
 }
 
 # --- where the code comes from -------------------------------------------

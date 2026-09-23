@@ -3,15 +3,15 @@ output "api_url" {
 }
 
 output "acuerdo_pages_url" {
-  value = "https://${cloudflare_pages_project.acuerdo.subdomain}"
+  value = var.enable_pages ? "https://${cloudflare_pages_project.acuerdo[0].subdomain}" : null
 }
 
 output "dns_records" {
   description = "The records to create at Namecheap by hand when manage_dns is false."
-  value = [
-    { host = local.api_host, type = "CNAME", value = local.api_target },
-    { host = local.acuerdo_host, type = "CNAME", value = local.acuerdo_target },
-  ]
+  value = concat(
+    [{ host = local.api_host, type = "CNAME", value = local.api_target }],
+    var.enable_pages ? [{ host = local.acuerdo_host, type = "CNAME", value = local.acuerdo_target }] : [],
+  )
 }
 
 output "database_external_url" {

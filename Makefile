@@ -53,6 +53,6 @@ TOFU_IMAGE := ghcr.io/opentofu/opentofu:1.12.6
 
 tofu:
 	@test -f ops/tofu/.env || { echo "ops/tofu/.env is missing: copy ops/tofu/.env.example and fill it in"; exit 1; }
-	docker run --rm -it -u $$(id -u):$$(id -g) -e HOME=/tmp \
+	docker run --rm $$([ -t 0 ] && echo -it) -u $$(id -u):$$(id -g) -e HOME=/tmp \
 		--env-file ops/tofu/.env -v $(CURDIR)/ops/tofu:/w -w /w \
 		$(TOFU_IMAGE) $(ARGS)
