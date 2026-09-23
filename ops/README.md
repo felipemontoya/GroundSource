@@ -51,6 +51,9 @@ itself. Do them once, in this order.
 2. **Render.** Create the account and a workspace (Hobby is enough). Connect
    GitHub and grant access to the repository. Create an API key; put it in
    `RENDER_API_KEY`, and the workspace id (`tea-…`) in `RENDER_OWNER_ID`.
+   Not the user id (`usr-…`): with that, creating the database fails with a
+   bare `not found`. `GET https://api.render.com/v1/owners` lists the right
+   one.
 3. **Cloudflare.**
    - Install the Cloudflare Pages GitHub app on the repository (Workers &
      Pages → Create → Pages → Connect to Git). A Pages project sourced from
@@ -155,10 +158,11 @@ cents of embeddings.
 
 ## Known gaps
 
-- Render's health check calls `/health`, which queries the database. That
-  is the check wanted — the service is not healthy without its database —
-  but if Render's checks arrive with a `Host` outside `ALLOWED_HOSTS`, they
-  will fail with `400`. Verify on the first deploy.
+- On the very first apply, the service's first deploy can reach the
+  database before it accepts connections, and the pre-deploy `migrate`
+  fails with *Connection refused*. Once the database shows `available`,
+  trigger a manual deploy (dashboard, or `POST /v1/services/<id>/deploys`).
+  Seen on 2026-09-22.
 - The per-client limit counts in one process's memory. It is correct for
   one instance; a second instance needs a shared cache first.
 - `docs/planning/adversarial-review.md` §9 lists what should exist before
