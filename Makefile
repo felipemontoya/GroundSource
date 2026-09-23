@@ -10,7 +10,7 @@
 COMPOSE := cd dev && docker compose
 
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-start dev-stop tofu
+.PHONY: help dev dev-start dev-stop tofu ingest-acuerdo
 
 # `make dev start` asks make for two goals, `dev` and `start`. Turn the
 # second into a no-op so make does not fail looking for a `start` rule, and
@@ -26,6 +26,7 @@ help:
 	@echo "make dev-start   build and start db, api and web, and wait until healthy"
 	@echo "make dev-stop    stop and remove the containers; the data volumes are kept"
 	@echo "make tofu ARGS=\"init|plan|apply|output\"   run OpenTofu on ops/tofu with ops/tofu/.env"
+	@echo "make ingest-acuerdo   ingest the agreement into production (opens and closes the database)"
 
 dev:
 	@$(MAKE) --no-print-directory $(if $(DEV_ACTION),dev-$(DEV_ACTION),help)
@@ -56,3 +57,12 @@ tofu:
 	docker run --rm $$([ -t 0 ] && echo -it) -u $$(id -u):$$(id -g) -e HOME=/tmp \
 		--env-file ops/tofu/.env -v $(CURDIR)/ops/tofu:/w -w /w \
 		$(TOFU_IMAGE) $(ARGS)
+
+# The agreement, into production. Everything else about the procedure
+# lives in the script; this only fixes the arguments. The title and edition
+# can be changed later without re-ingesting (label_source).
+ingest-acuerdo:
+	ops/ingest-production.sh Acuerdo-Final-JEP-24-11-2016.pdf acuerdo-final-jep-2016 \
+		--language spanish --nickname "el acuerdo" \
+		--title "Acuerdo Final para la Terminación del Conflicto y la Construcción de una Paz Estable y Duradera" \
+		--edition "Edición JEP"

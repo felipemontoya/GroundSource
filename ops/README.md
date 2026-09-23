@@ -112,38 +112,38 @@ only needed again when the infrastructure itself changes.
 
 Ingestion runs from a workstation against the production database; the
 PDF never goes to the server. Only the agreement is ingested there —
-never a local test-bed document.
+never a local test-bed document, and the script refuses those by name.
 
-1. Open the database to this machine: set `TF_VAR_db_admin_cidrs` to
-   `["<your public IP>/32"]` in `ops/tofu/.env`, then plan and apply.
-2. Get the connection string:
-   `make tofu ARGS="output -raw database_external_url"`.
-3. Run the commands from the local stack's image, pointed at production:
+```
+make ingest-acuerdo
+```
 
-   ```
-   cd dev
-   export DATABASE_URL='<the external connection string>'
-   docker compose run --rm -e RUN_MIGRATIONS=0 -e DATABASE_URL api \
-       python manage.py ingest_source /sources/<agreement>.pdf \
-       --slug acuerdo-final-jep-2016 --language spanish \
-       --nickname "el acuerdo" --title "<title>" --edition "<edition>"
-   docker compose run --rm -e RUN_MIGRATIONS=0 -e DATABASE_URL api \
-       python manage.py verify_anchors acuerdo-final-jep-2016
-   docker compose run --rm -e RUN_MIGRATIONS=0 -e DATABASE_URL api \
-       python manage.py embed_source acuerdo-final-jep-2016
-   ```
+or, for any other document under `sources/`:
 
-   Using the same slug as locally means `pages/acuerdo/src/document.ts`
-   needs no change. Embedding the agreement costs cents.
-4. Close the database again: `TF_VAR_db_admin_cidrs=[]`, plan, apply.
+```
+ops/ingest-production.sh <file> <slug> --language spanish --nickname "..." --title "..." --edition "..."
+```
+
+`ops/ingest-production.sh` opens the database to this machine's public IP
+(a targeted OpenTofu change, overriding `TF_VAR_db_admin_cidrs`), waits
+until the connection is accepted, runs `ingest_source`, `verify_anchors`
+and `embed_source` from the local stack's image with `DATABASE_URL` pointed
+at production, and closes the database again on exit, even when a step
+fails. Keep `TF_VAR_db_admin_cidrs=[]` in `ops/tofu/.env`, so that an
+ordinary plan never reopens it. Embeddings use the `OPENAI_API_KEY` in
+`dev/.env` and cost cents.
+
+Using the same slug as locally means `pages/acuerdo/src/document.ts`
+needs no change.
 
 ## Watching the spend
 
 ```
-docker compose run --rm -e RUN_MIGRATIONS=0 -e DATABASE_URL api python manage.py show_usage
+cd dev && docker compose run --rm -e RUN_MIGRATIONS=0 -e DATABASE_URL api python manage.py show_usage
 ```
 
-(with the database opened as above) prints each day's model calls, the
+(with the database opened to this machine and `DATABASE_URL` set to
+`make tofu ARGS="output -raw database_external_url"`) prints each day's model calls, the
 questions answered retrieval-only because the cap was reached, and the
 tokens used. `ask_daily_model_limit` in `tofu/variables.tf` is sized for
 USD 10 a month on `gpt-5.4-nano`; recalculate it whenever the model or its
