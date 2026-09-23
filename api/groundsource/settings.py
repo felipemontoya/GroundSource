@@ -93,7 +93,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 EMBEDDING_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "1536"))
-CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-5.4-nano")
+CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-6-luna")
 CHAT_MAX_OUTPUT_TOKENS = int(os.environ.get("CHAT_MAX_OUTPUT_TOKENS", "1200"))
 
 # Bumped whenever a change moves offsets or re-shapes the tree. Stored on
