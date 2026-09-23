@@ -22,9 +22,12 @@ Names: the API at `groundsource.projects.felipemontoya.co`, the page at
 `acuerdo.felipemontoya.co`. The reasoning behind the choices is in
 [ADR-0003](../docs/adrs/0003-hosting-render-and-cloudflare-pages.md).
 
-Expected cost: about USD 7 (web) + USD 6.30 (database) + at most USD 10
-(OpenAI, held by the daily cap) ≈ **USD 23 a month**. Pages, R2 at this
-size, and DNS cost nothing.
+Expected cost: about USD 7 (web) + USD 6.30 (database) + model calls.
+The backend estimates model spend from the tokens it is billed for and
+logs a warning at USD 10 a month (soft limit); at USD 30 (hard limit) it
+stops generating until the next month and answers with passages only. So
+about USD 23 a month at the soft limit, and never more than about USD 43.
+Pages, R2 at this size, and DNS cost nothing.
 
 ## Secrets
 
@@ -143,13 +146,15 @@ cd dev && docker compose run --rm -e RUN_MIGRATIONS=0 -e DATABASE_URL api python
 ```
 
 (with the database opened to this machine and `DATABASE_URL` set to
-`make tofu ARGS="output -raw database_external_url"`) prints each day's model calls, the
-questions answered retrieval-only because the cap was reached, and the
-tokens used. `ask_daily_model_limit` in `tofu/variables.tf` is sized for
-USD 10 a month on `gpt-6-luna`, from a single production measurement
-(~7,700 input and ~890 output tokens per question); recalibrate it from
-`show_usage` after the first days of real traffic, and whenever the model
-or its price changes.
+`make tofu ARGS="output -raw database_external_url"`) prints this month's
+estimated spend against the soft and hard limits, and each day's model
+calls, refusals, tokens and cost. Crossing either monthly limit also logs a
+warning in the service's Render logs.
+
+The estimate prices tokens at `chat_price_*_per_mtok` in
+`tofu/variables.tf`: change those together with `chat_model`, or the limits
+are enforced against the wrong price. OpenAI's dashboard is the authority
+on the real bill; the project's prepaid credit is the last stop.
 
 ## Backups
 

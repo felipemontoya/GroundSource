@@ -113,24 +113,67 @@ variable "chat_model" {
   default = "gpt-6-luna"
 }
 
-variable "ask_daily_model_limit" {
+variable "chat_price_input_per_mtok" {
+  description = "USD per million input tokens for chat_model; change with it."
+  type        = number
+  default     = 0.10
+}
+
+variable "chat_price_output_per_mtok" {
+  description = "USD per million output tokens for chat_model; change with it."
+  type        = number
+  default     = 0.50
+}
+
+variable "chat_reasoning_effort" {
+  description = "reasoning.effort for chat_model. gpt-6-luna: none, low or medium."
+  type        = string
+  default     = "low"
+}
+
+variable "chat_max_output_tokens" {
   description = <<-EOT
-    Model calls per UTC day before answers degrade to retrieval-only. The
-    default is sized for USD 10/month on gpt-6-luna at USD 0.10 / 0.50 per
-    million input / output tokens. Measured in production on 2026-09-23:
-    ~7,700 input and ~890 output tokens per question, ~USD 0.0012, so
-    USD 10 / 30 days / 0.0012 ≈ 275. One sample; recalibrate from
-    `manage.py show_usage` after real traffic, and whenever chat_model
-    changes.
+    Ceiling on one answer's output, reasoning included. Generous, so that
+    an answer is never cut short: at 1,200 luna's reasoning used it all.
+    Typical answers use 250–700. The monthly limits hold the bill.
   EOT
   type        = number
-  default     = 250
+  default     = 8000
+}
+
+variable "ask_monthly_soft_limit_usd" {
+  description = "Estimated monthly generation spend at which the backend logs a warning."
+  type        = number
+  default     = 10
+}
+
+variable "ask_monthly_hard_limit_usd" {
+  description = "Estimated monthly generation spend at which answers become retrieval-only until next month."
+  type        = number
+  default     = 30
+}
+
+variable "ask_daily_model_limit" {
+  description = <<-EOT
+    Model calls per UTC day before answers degrade to retrieval-only: a
+    burst guard, so one busy day cannot spend the month. The monthly hard
+    limit is what holds the bill. On gpt-6-luna at effort low a question
+    costs ~USD 0.001 (~7,700 input, ~250–700 output tokens, measured
+    2026-09-23), and at most ~USD 0.005 if it used the whole output
+    ceiling; 1,000 calls is ~USD 1 on a typical day, ~USD 5 at worst.
+  EOT
+  type        = number
+  default     = 1000
 }
 
 variable "ask_per_client_limit" {
-  description = "Questions per client per window."
+  description = <<-EOT
+    Questions per client per window. High enough for a real conversation
+    with the document; it stops scripts, not readers. The monthly limit,
+    not this, holds the bill.
+  EOT
   type        = number
-  default     = 20
+  default     = 60
 }
 
 variable "ask_per_client_window_seconds" {

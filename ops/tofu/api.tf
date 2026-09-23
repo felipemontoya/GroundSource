@@ -52,13 +52,18 @@ resource "render_web_service" "api" {
     # Render's edge is Cloudflare, which overwrites this header.
     CLIENT_IP_HEADER = { value = "True-Client-IP" }
 
-    OPENAI_API_KEY         = { value = var.openai_api_key }
-    EMBEDDING_MODEL        = { value = "text-embedding-3-small" }
-    EMBEDDING_DIMENSIONS   = { value = "1536" }
-    CHAT_MODEL             = { value = var.chat_model }
-    CHAT_MAX_OUTPUT_TOKENS = { value = "1200" }
-    PIPELINE_VERSION       = { value = "0.1.0" }
+    OPENAI_API_KEY             = { value = var.openai_api_key }
+    EMBEDDING_MODEL            = { value = "text-embedding-3-small" }
+    EMBEDDING_DIMENSIONS       = { value = "1536" }
+    CHAT_MODEL                 = { value = var.chat_model }
+    CHAT_MAX_OUTPUT_TOKENS     = { value = tostring(var.chat_max_output_tokens) }
+    CHAT_REASONING_EFFORT      = { value = var.chat_reasoning_effort }
+    CHAT_PRICE_INPUT_PER_MTOK  = { value = tostring(var.chat_price_input_per_mtok) }
+    CHAT_PRICE_OUTPUT_PER_MTOK = { value = tostring(var.chat_price_output_per_mtok) }
+    PIPELINE_VERSION           = { value = "0.1.0" }
 
+    ASK_MONTHLY_SOFT_LIMIT_USD    = { value = tostring(var.ask_monthly_soft_limit_usd) }
+    ASK_MONTHLY_HARD_LIMIT_USD    = { value = tostring(var.ask_monthly_hard_limit_usd) }
     ASK_DAILY_MODEL_LIMIT         = { value = tostring(var.ask_daily_model_limit) }
     ASK_PER_CLIENT_LIMIT          = { value = tostring(var.ask_per_client_limit) }
     ASK_PER_CLIENT_WINDOW_SECONDS = { value = tostring(var.ask_per_client_window_seconds) }
