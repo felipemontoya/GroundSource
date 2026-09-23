@@ -84,6 +84,16 @@ paginate differently, so a citation's page number only means something under
 the edition that produced it. The page keeps a separate conversation per
 document for the same reason.
 
+`--nickname` is how the page refers to the document in running text — "el
+acuerdo", "la ley", "el decreto", "el RFP". It is a rendering label only: it
+is not sent to the model and is never added to a retrieval query. To set or
+change title, edition or nickname on a source already ingested, without
+re-ingesting it and losing its embeddings:
+
+```
+docker compose exec api python manage.py label_source <handle> --nickname "el acuerdo"
+```
+
 ## Asking it things
 
 <http://localhost:5173> once a document is loaded. Or directly:

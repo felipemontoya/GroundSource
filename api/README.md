@@ -40,8 +40,14 @@ because a citation's page number is a location in a particular file. Every
 answer carries the identity of the source that produced it so that it can
 never be displayed under a document that did not.
 
-Commands: `ingest_source`, `verify_anchors`, `embed_source`. The first two
-are free and need no key; the third costs money. That split is deliberate —
+A source may also carry a `nickname` — "el acuerdo", "la ley" — which the
+page uses to refer to it in running text. It is a rendering label only: it
+is not sent to the model, and retrieval searches the question as asked,
+never with the nickname added.
+
+Commands: `ingest_source`, `verify_anchors`, `embed_source`, `label_source`.
+The first two are free and need no key; the third costs money; the last
+changes only a source's title, edition or nickname. That split is deliberate —
 see `../dev/README.md`.
 
 One app is not the answer to the open decision in `../AGENTS.md` about how

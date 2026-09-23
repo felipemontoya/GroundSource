@@ -8,7 +8,9 @@ import type { Answer, Claim, Citation, SourceSummary } from "./api";
  * - Quotation is visually distinct from everything the model wrote, so a
  *   reader can tell at a glance which words are the document's.
  * - Interpretation is labelled where it happens, not disclaimed at the end.
- * - An abstention is presented as an answer, not as a failure state.
+ * - An abstention is presented as an answer, not as a failure state. Claims
+ *   that come with an abstention are what the document does say on the
+ *   topic, and are headed as such so they do not read as the answer.
  * - The retrieved passages stay reachable, so a reader can check what the
  *   answer chose not to use.
  * - An answer is never rendered under a document that did not produce it.
@@ -31,21 +33,30 @@ export function AnswerView({
 }) {
   const [showRetrieved, setShowRetrieved] = useState(false);
   const misattributed = answer.source.slug !== expected.slug;
+  // The answer names its own source, so the nickname comes from it rather
+  // than from whichever document the page has selected.
+  const name = answer.source.nickname || "el documento";
 
   return (
     <div className="answer">
       {misattributed && (
         <p className="warn">
           Esta respuesta vino de <strong>{answer.source.edition || answer.source.title}</strong>,
-          , no del documento seleccionado. Sus rutas de sección y números de página se
+          no del documento seleccionado. Sus rutas de sección y números de página se
           refieren a esa edición.
         </p>
       )}
       {answer.abstained && (
         <p className="abstention">
-          <span className="label">El documento no responde a esto.</span>{" "}
+          <span className="label">{capitalize(name)} no responde a esto.</span>{" "}
           {answer.abstention_reason}
         </p>
+      )}
+
+      {answer.abstained && answer.claims.length > 0 && (
+        <h3 className="related">
+          Lo que sí dice {name} sobre el tema
+        </h3>
       )}
 
       {answer.claims.map((claim, index) => (
@@ -85,6 +96,10 @@ export function AnswerView({
       )}
     </div>
   );
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function ClaimView({ claim }: { claim: Claim }) {

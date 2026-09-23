@@ -201,6 +201,10 @@ What follows, and what the code now does:
 - **A `Source` is an edition.** One file, one checksum, one pagination. Two
   typesettings of one agreement are two sources, deliberately, and the
   `edition` field names which is which in words a reader recognises.
+- **A document has a nickname.** The page refers to it as "el acuerdo",
+  "la ley", "el RFP" rather than "el documento". The `nickname` field is a
+  rendering label only: the model is not told it, and retrieval never adds
+  it to a query — it reaches lexical search only when the reader typed it.
 - **A conversation belongs to an edition.** The page keeps one transcript
   per document and every answer carries the identity of the source that
   produced it, so an answer is never rendered under a document that did not

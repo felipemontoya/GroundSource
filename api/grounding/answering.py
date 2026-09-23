@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 INSTRUCTIONS = """\
 You answer questions about one document, and only from the numbered extracts \
-you are given. You never use outside knowledge about the subject.
+you are given. You never use outside knowledge about the subject. The \
+document is named before the question.
 
 You do not write quotations. For every claim you make, you identify which \
 extract supports it and the character range within that extract that a \
@@ -44,7 +45,9 @@ must fall inside the extract's stated length.
 - Choose ranges that are a sentence or more: enough that a reader can tell \
 whether the quotation survives its context.
 - If the extracts do not answer the question, set abstained to true and say \
-what is missing. Do not answer from general knowledge.
+what is missing. Do not answer from general knowledge. You may still list, \
+as claims, what the extracts do say on the question's topic; they are shown \
+to the reader as what the document says about it, not as an answer.
 - Mark a claim as "interpretation" when it combines or reads between \
 extracts rather than restating one. Mark it "quotation" when it restates \
 what a single extract says.
@@ -140,6 +143,7 @@ class Answer:
                 "slug": self.source.slug,
                 "title": self.source.title,
                 "edition": self.source.edition,
+                "nickname": self.source.nickname,
                 "sha256": self.source.sha256,
                 "pages": self.source.page_count,
             },
@@ -160,6 +164,19 @@ class Answer:
             "model": self.model,
             "usage": self.usage,
         }
+
+
+def _render_document(source: Source) -> str:
+    """Name the document the extracts come from, and nothing more.
+
+    The nickname is left out on purpose: it is a label for the page to
+    render, not something the model is told. What the document says still
+    comes only from the extracts.
+    """
+    lines = [f"Document: {source.title}"]
+    if source.edition:
+        lines.append(f"Edition: {source.edition}")
+    return "\n".join(lines)
 
 
 def _render_extracts(source: Source, units: list[Unit]) -> str:
@@ -209,7 +226,11 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
             notes=notes,
         )
 
-    prompt = f"Question: {question}\n\n{_render_extracts(source, units)}"
+    prompt = (
+        f"{_render_document(source)}\n\n"
+        f"Question: {question}\n\n"
+        f"{_render_extracts(source, units)}"
+    )
 
     try:
         completion = llm.complete_json(

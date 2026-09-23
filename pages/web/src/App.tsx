@@ -172,7 +172,7 @@ export function App() {
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder={`Pregunta sobre ${source.edition || source.title}`}
+          placeholder={`Pregunta sobre ${source.nickname || source.edition || source.title}`}
           aria-label="Tu pregunta"
           disabled={pending}
         />

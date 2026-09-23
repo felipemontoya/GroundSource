@@ -38,6 +38,14 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
+            "--nickname",
+            default="",
+            help=(
+                "How the page refers to the document: 'el acuerdo', 'la ley', "
+                "'el RFP'. Rendering only. Change it later with label_source."
+            ),
+        )
+        parser.add_argument(
             "--language",
             default="english",
             help="PostgreSQL text search configuration, e.g. english or spanish.",
@@ -91,6 +99,7 @@ class Command(BaseCommand):
                 slug=slug,
                 title=options["title"] or result.title or path.stem,
                 edition=options["edition"],
+                nickname=options["nickname"],
                 filename=path.name,
                 sha256=digest,
                 byte_size=len(data),

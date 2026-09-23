@@ -44,6 +44,11 @@ class Source(models.Model):
     # this is set by hand at ingest.
     edition = models.CharField(max_length=200, blank=True, default="")
 
+    # How the page refers to the document in running text: "el acuerdo",
+    # "la ley", "el decreto", "el RFP". A rendering label only: it is not
+    # sent to the model and not added to any retrieval query. Set by hand.
+    nickname = models.CharField(max_length=100, blank=True, default="")
+
     # --- the immutable original ------------------------------------------
     filename = models.TextField(help_text="Name of the file as ingested.")
     sha256 = models.CharField(max_length=64, db_index=True)

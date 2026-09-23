@@ -22,6 +22,8 @@ export interface SourceSummary {
   title: string;
   /** Which typesetting this is: "JEP, 2018". Page numbers belong to it. */
   edition: string;
+  /** How the page refers to it: "el acuerdo", "la ley". Rendering only. */
+  nickname: string;
   filename: string;
   sha256: string;
   pages: number | null;
@@ -75,6 +77,7 @@ export interface AnswerSource {
   slug: string;
   title: string;
   edition: string;
+  nickname: string;
   sha256: string;
   pages: number | null;
 }
