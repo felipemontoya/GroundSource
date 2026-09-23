@@ -159,6 +159,15 @@ test-results/
 /dev/.state/
 pgdata/
 
+# OpenTofu: provider cache, state and plans. State is kept remotely and
+# encrypted; a local copy holds every secret in the deployment.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+
 # ---------------------------------------------------------------------------
 # Editors, OS, tooling
 # ---------------------------------------------------------------------------

@@ -110,12 +110,15 @@ below.
 ## Open decisions
 
 Settled: the backend is Python + Django over PostgreSQL, and the code is
-licensed under Apache 2.0.
+licensed under Apache 2.0. The backend and its database are hosted on
+Render and each page on Cloudflare Pages, declared as code in `ops/`
+(ADR-0003).
 
 Still open:
 
-- Frontend stack and hosting target — likely a statically hosted page built
-  with a modern JavaScript toolchain, consuming the API over HTTP.
+- Frontend stack — each page is a static site built with a modern
+  JavaScript toolchain, consuming the API over HTTP; the framework itself
+  is not an ADR yet.
 - Model providers for the preparation passes and for the chat agent.
 - Vector storage: pgvector in the same database, or a dedicated index.
 - Whether the first release ships a reference frontend or API only.

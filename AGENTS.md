@@ -75,6 +75,12 @@ Settled:
   HTTP. Until it is chosen, the backend must not assume a server-rendered
   frontend: the API is the contract, and anything the UI needs is available
   through it.
+- **Hosting:** the backend and its database on Render (two services, one
+  region), each page on Cloudflare Pages, all declared with OpenTofu in
+  `ops/tofu/`. See ADR-0003.
+- **Secrets:** the repository is public. Every secret lives in a
+  git-ignored `.env` file (`dev/.env`, `ops/tofu/.env`); only `.env.example`
+  templates, holding names and never values, are committed.
 
 Consequences for code in this repo:
 
@@ -149,7 +155,7 @@ Do not treat these as settled; raise them rather than picking silently.
   fixtures, tooling.
 - The runtime agent's concrete behavior rules — how grounded answers are
   composed, formatted, and presented — beyond the contract in `README.md`.
-- Frontend framework and hosting target.
+- Frontend framework (Vite + React is the working choice, not an ADR).
 - Embedding and chat model providers.
 - Task queue for preparation passes (Celery, RQ, or Django-native).
 - Link format for resolving anchors in the original document (page + offset

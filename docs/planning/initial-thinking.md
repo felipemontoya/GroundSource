@@ -247,13 +247,13 @@ The rest is proposal.
 | Backend | Django 5 on **ASGI** (uvicorn or granian), async views | in `api/` |
 | Database | PostgreSQL + `pgvector` + `tsvector` (`spanish`) | one database, no separate vector store |
 | Frontend | Vite + React + Tailwind, static build | in `pages/`, one subdirectory |
-| Hosting (frontend) | Cloudflare Pages or equivalent static host | see `ops/` |
+| Hosting (frontend) | **Cloudflare Pages**, one project per page | ADR-0003, `ops/tofu/pages.tf` |
 | Streaming | **SSE**, not WebSockets | |
 | LLM | provider-abstracted; start cheapest tier | see Model selection |
 | Embeddings | one model, pinned, recorded per artifact | |
 | Queue | django-tasks or RQ | needed only for the social-channel phase |
 | Local environment | **Docker + Docker Compose** | in `dev/`; see Local environment |
-| Deployment platform | **deferred** | decided when `ops/` is built; see Hosting |
+| Deployment platform | **Render** web service + Render Postgres, OpenTofu | ADR-0003, `ops/` |
 
 ### Local environment
 
@@ -664,8 +664,11 @@ comparison before that bill is accepted.
 
 ## 11. Hosting and scale
 
-**The platform decision is deferred to the `ops/` phase.** What follows is
-the analysis that should feed it, not a choice.
+**Decided in [ADR-0003](../adrs/0003-hosting-render-and-cloudflare-pages.md):**
+Render for the backend and a separate Render Postgres, Cloudflare Pages for
+each page, everything declared with OpenTofu in `ops/tofu/`, at about
+USD 23 a month including the capped model spend. What follows is the
+analysis that fed it.
 
 ### The shape of the load
 
