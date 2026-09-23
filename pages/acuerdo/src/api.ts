@@ -121,9 +121,14 @@ export async function ask(
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ question }),
   });
+  if (response.status === 429) {
+    throw new Error(
+      "Has hecho muchas preguntas en poco tiempo. Espera un rato y vuelve a intentarlo.",
+    );
+  }
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? `The API answered ${response.status}`);
+    throw new Error(body?.error ?? `La API respondió ${response.status}`);
   }
   return body as Answer;
 }

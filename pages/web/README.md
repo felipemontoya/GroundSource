@@ -38,5 +38,5 @@ API_ORIGIN=http://localhost:8000 npm run dev
 path `/api`, which the dev server proxies to the backend; that keeps a real
 reverse proxy in the path locally, which is where SSE buffering problems
 surface. A build hosted on its own origin sets `VITE_API_BASE_URL` to the
-backend's absolute origin instead — and the API will need CORS at that
-point, which it does not have yet.
+backend's absolute origin instead, and the backend must list the page's
+origin in `CORS_ALLOWED_ORIGINS`.

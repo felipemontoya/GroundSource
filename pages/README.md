@@ -2,8 +2,12 @@
 
 Frontend code. Statically hosted pages that talk to `../api/` over HTTP.
 
-There is one page today — [`web/`](web/), the reference page — but the
-directory is plural by intent: several
+- [`web/`](web/) — the reference page: every loaded document, for
+  exercising the pipeline. Not deployed.
+- [`acuerdo/`](acuerdo/) — the public page for the 24 Nov 2016 Final
+  Agreement, fixed to that one document.
+
+The directory is plural by intent: several
 distinct front ends — different audiences, different documents, different
 framings — are expected to sit here over time, all speaking to the same
 backend. Each page is its own subdirectory with its own build, so adding the
