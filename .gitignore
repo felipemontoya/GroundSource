@@ -158,6 +158,7 @@ test-results/
 /dev/data/
 /dev/.state/
 pgdata/
+docs/TODO.md
 
 # OpenTofu: provider cache, state and plans. State is kept remotely and
 # encrypted; a local copy holds every secret in the deployment.
