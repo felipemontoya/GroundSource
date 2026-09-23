@@ -175,19 +175,52 @@ document. Each is a separate decision, not an assumed continuation.
 
 Applies when rung 3 is reached; none of it blocks earlier work.
 
-- **Use the 24 Nov 2016 version, 310 pages** — the renegotiated text that took
-  effect after the plebiscite.
-- Canonical PDF:
-  `https://www.cancilleria.gov.co/sites/default/files/Fotos2016/12.11_1.2016nuevoacuerdofinal.pdf`
-- **Do not use the 24 Aug 2016 version, 297 pages.** Indexing the superseded
-  text would turn an anti-misinformation tool into a source of it.
+- **Use the 24 Nov 2016 text** — the renegotiated agreement that took effect
+  after the plebiscite.
+- **Do not use the 24 Aug 2016 text.** Indexing the superseded version would
+  turn an anti-misinformation tool into a source of it. This is the only
+  identity question that matters, and it is a question about *which text*,
+  not about which file.
 
-**Ingest-time guard:** assert the page count and the checksum of the fetched
-PDF before any preparation runs. A mismatch aborts ingestion loudly rather
-than producing a plausible-looking index of the wrong document. The checksum
-belongs in a manifest alongside the file in `sources/`, together with the
-retrieval URL and date, so a reader can verify independently that the indexed
-text is the official one.
+### Editions are documents, not approximations of one
+
+An earlier draft of this section treated page count as part of the
+document's identity — 310 pages for the November text, 297 for the August
+one — and treated the Cancillería PDF as the canonical artifact that other
+files approximate. That was wrong, and worth correcting explicitly because
+the error is easy to repeat.
+
+One text can be typeset many times. The JEP's edition of the 24 Nov 2016
+agreement runs to 189 pages of the same words the Cancillería edition sets
+in 310. Neither is a degraded copy of the other; they are two documents a
+reader can hold, with different pagination and different typography, and a
+citation that says "page 47" says it about one of them.
+
+What follows, and what the code now does:
+
+- **A `Source` is an edition.** One file, one checksum, one pagination. Two
+  typesettings of one agreement are two sources, deliberately, and the
+  `edition` field names which is which in words a reader recognises.
+- **A conversation belongs to an edition.** The page keeps one transcript
+  per document and every answer carries the identity of the source that
+  produced it, so an answer is never rendered under a document that did not
+  produce it. Talking to a document means talking to *that* document.
+- **Indexing several editions is a feature, not a hazard.** A reader who
+  wants the edition they are holding gets its page numbers; a reader
+  comparing editions can see where they differ, even if the difference is
+  only styling and pagination.
+
+The durable anchor across editions is the agreement's own numbering, which
+survives re-typesetting. Page numbers are an edition's property and are
+reported as such.
+
+**Ingest-time guard:** assert the *checksum* before any preparation runs — a
+recorded, verifiable claim that this file is the edition it says it is. Page
+count is recorded as a property of the edition, not used as a test of which
+text it contains, since a new typesetting changes it while the words stay
+identical. The checksum belongs in a manifest alongside the file in
+`sources/`, together with the retrieval URL and date, so a reader can verify
+independently which edition was indexed and where it came from.
 
 Size: roughly 200–280k tokens — too large to stuff into context, which is
 what makes retrieval the correct architecture rather than a premature
@@ -251,13 +284,84 @@ first pass chose, where the table above left a choice open:
 | ASGI server | uvicorn (`[standard]`) | The table offered uvicorn or granian. Nothing measured; uvicorn is the boring one and `watchfiles` gives reload in the container. |
 | PostgreSQL | `pgvector/pgvector:pg17` | pg17 over pg18 because hosting support lags a major release. pgvector 0.8.6, `pg_trgm`, and an ICU `es` collation are created by `dev/postgres/initdb/`. |
 | Frontend | Vite + React + TypeScript | The framework is still an open decision in `AGENTS.md`; this follows the proposal above rather than settling it. |
-| Tailwind | not added | One stylesheet is enough for a page with no interface. Revisit when there is an interface to style. |
-| Django app layout | none | Deliberately unresolved: the health view sits in the project package, so the open decision stays open. |
+| Tailwind | not added | One stylesheet is enough at this size. Revisit when there is more interface to style. |
+| Django app layout | one app, `grounding` | Still not the decision: one app is what a proof of concept needs, and splitting it later is a migration rather than a rewrite. |
 | CORS | not added | The page reaches the API through the dev server's `/api` proxy, so nothing is cross-origin locally — and the proxy keeps a real reverse proxy in the path, which is where the buffering gotcha below shows up. CORS becomes necessary when a static build is hosted on its own origin. |
+| Extraction | `pdfplumber` | See below. |
+| Embeddings | `text-embedding-3-small`, 1536d | Pinned in the schema: pgvector columns have a fixed width, so a second model is a migration. |
+| Answering model | `gpt-5.4-nano` | Comparable in price to the older mini tier and markedly better, so it is the starting point rather than the fallback. Reached through the Responses API with a strict JSON schema. |
 
 None of these are ADRs yet. The ones that want to become ADRs once something
 has been measured against them are listed in
 [Decisions that want an ADR](#decisions-that-want-an-adr).
+
+### Docling, measured
+
+[`prior-art.md`](prior-art.md) §4.2 recommends an ingestion library over
+hand-rolled extraction and names Docling, while insisting the winner be
+picked by measurement rather than by README. The measurement, taken
+2026-09-13: `pip install docling chonkie` lands **6.2 GB** of site-packages
+— 3.2 GB of it NVIDIA CUDA libraries, 1.2 GB torch, 897 MB triton.
+
+That is disqualifying here for a reason more durable than size: **there is
+no GPU on the development machine**, so the layout model would run on CPU
+behind a stack that exists to talk to hardware that is not present. The
+standing rule that follows is worth keeping even when the numbers change —
+*heavy model work happens remotely, behind an API; local containers stay
+small enough to rebuild in seconds.*
+
+`pdfplumber` (MIT, over pdfminer.six) is used instead. It gives every
+character its page and bounding box, which is the provenance invariant 2
+asks for, and for a born-digital PDF with a clean text layer that extraction
+is exact — a layout model would add inference to a problem that does not
+have one.
+
+This is not a general verdict on Docling. It is a verdict on running Docling
+locally, on this machine, against this class of document. `api/grounding/
+extraction.py` keeps an `Extraction` boundary precisely so that a scanned
+document, or a remote extraction service, slots in behind the same contract
+and is judged against a golden file.
+
+### What Phase 0 actually looks like now
+
+Against a 15-page English test document, not against a rung-1 fixture — the
+fixture question in §1 is still open, and this document was to hand.
+
+- **Ingest** — `manage.py ingest_source`: sha256 the bytes, extract canonical
+  text with a page map, parse the numbered hierarchy into 112 units, index
+  them with `to_tsvector` in the source's own language.
+- **Verify** — `manage.py verify_anchors`: re-slice every unit and compare.
+  112/112 matched, 98.4% of the canonical text covered, 0 overlapping
+  anchors.
+- **Embed** — `manage.py embed_source`: separate command, because parsing is
+  free and embedding is not. This is what lets the structural half of the
+  pipeline be iterated on without spending anything.
+- **Retrieve** — dense plus lexical, fused by reciprocal rank. One finding
+  worth keeping: `websearch_to_tsquery` ANDs every term, so "What is the
+  recovery time objective?" matched *nothing*, because no single clause held
+  all three words. The lexical side ORs the question's lexemes and lets
+  `ts_rank_cd` sort out which partial match is best.
+- **Answer** — the model fills a JSON schema with unit ids and offset ranges.
+  There is no field for quoted text. Code slices every range out of the
+  database, rejects one that overflows its unit, drops a claim whose
+  citations all fail, and turns an answer with no surviving claims into an
+  abstention.
+
+Two things that needed fixing once real output existed, both of them in code
+rather than in the prompt:
+
+1. Models count characters badly. Ranges came back a few characters off and
+   produced quotations like `"imes of crisis"`. Ranges are now snapped
+   outwards to whole words and, where one is near, whole sentences — only
+   ever outwards, since a range that shrank could drop the negation or the
+   subject that changes what a passage means.
+2. Snapping first treated newlines as sentence ends, which cut quotations at
+   whatever column the PDF wrapped. Inside a unit a newline is the
+   extractor's, not the document's.
+
+Still missing from Phase 0 as specified: the rung-1 fixture and a committed
+golden file for it. Not in this phase and still not: streaming, conversation
+history, deployment, the target document.
 
 ### Rejected, with reasons worth keeping
 

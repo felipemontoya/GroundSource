@@ -47,6 +47,15 @@ services:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,api}
       DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL:-INFO}
+      # Absent is fine: ingestion and lexical retrieval work without a key,
+      # and the API reports the degraded state instead of failing.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1536}
+      CHAT_MODEL: ${CHAT_MODEL:-gpt-5.4-nano}
+      CHAT_MAX_OUTPUT_TOKENS: ${CHAT_MAX_OUTPUT_TOKENS:-1200}
+      PIPELINE_VERSION: ${PIPELINE_VERSION:-0.1.0}
+      SOURCES_DIR: /sources
     volumes:
       # Read-only: the container runs the source, it does not edit it.
       - ../api:/app:ro
@@ -71,6 +80,38 @@ services:
       retries: 6
       start_period: 20s
     restart: unless-stopped
+
+  # One-off code generation: makemigrations and anything else that writes
+  # into the source tree. Separate from `api` because `api` mounts the code
+  # read-only on purpose — the server runs the source, it does not edit it —
+  # and relaxing that for the sake of an occasional command would remove the
+  # guarantee for every command.
+  #
+  #   docker compose run --rm tools python manage.py makemigrations
+  tools:
+    profiles: ["tools"]
+    build:
+      context: ../api
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-groundsource}
+      POSTGRES_USER: ${POSTGRES_USER:-groundsource}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-groundsource-local-only}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-insecure-key-do-not-deploy}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      RUN_MIGRATIONS: "0"
+    volumes:
+      - ../api:/app
+    # Files it generates (migrations) land in the source tree, so they
+    # must belong to the user who will edit and commit them. Override
+    # with DOCKER_USER in dev/.env if this machine is not uid 1000.
+    user: "${DOCKER_USER:-1000:1000}"
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["/app/docker-entrypoint.sh"]
+    command: ["python", "manage.py", "help"]
 
   web:
     build:

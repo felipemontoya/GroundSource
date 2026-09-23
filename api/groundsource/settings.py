@@ -40,7 +40,9 @@ ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,api")
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
+    "django.contrib.postgres",
     "django.contrib.staticfiles",
+    "grounding",
 ]
 
 MIDDLEWARE = [
@@ -84,6 +86,28 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- model providers -------------------------------------------------------
+# Absent keys are not a startup error: ingestion and lexical retrieval work
+# without them, and the API reports the degraded state rather than crashing.
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
+EMBEDDING_DIMENSIONS = int(os.environ.get("EMBEDDING_DIMENSIONS", "1536"))
+CHAT_MODEL = os.environ.get("CHAT_MODEL", "gpt-5.4-nano")
+CHAT_MAX_OUTPUT_TOKENS = int(os.environ.get("CHAT_MAX_OUTPUT_TOKENS", "1200"))
+
+# Bumped whenever a change moves offsets or re-shapes the tree. Stored on
+# every derived row so that stale artifacts are identifiable rather than
+# indistinguishable from fresh ones.
+PIPELINE_VERSION = os.environ.get("PIPELINE_VERSION", "0.1.0")
+
+# Where ingested originals are mounted. Read-only by contract.
+SOURCES_DIR = Path(os.environ.get("SOURCES_DIR", "/sources"))
+
+# Retrieval shape. Each list is fused by reciprocal rank before the top
+# RETRIEVAL_TOP_K survive into the prompt.
+RETRIEVAL_CANDIDATES = int(os.environ.get("RETRIEVAL_CANDIDATES", "30"))
+RETRIEVAL_TOP_K = int(os.environ.get("RETRIEVAL_TOP_K", "6"))
 
 LOGGING = {
     "version": 1,
