@@ -32,3 +32,8 @@ pdfplumber~=0.11.10
 # Embeddings and chat completion. One provider, behind grounding/llm.py, so
 # that the provider choice stays a single file rather than a commitment.
 openai~=3.13.0
+
+# CORS for the pages in ../pages/, each a static site on its own origin.
+# Configured entirely from settings — no models, no database — and the
+# standard answer; hand-rolling preflight handling is where CORS bugs live.
+django-cors-headers~=4.9

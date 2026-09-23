@@ -15,7 +15,7 @@ from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from . import answering, llm
+from . import answering, limits, llm
 from .models import Source
 
 MAX_QUESTION_CHARS = 1000
@@ -115,6 +115,11 @@ def ask(request: HttpRequest, slug: str) -> JsonResponse:
     if len(question) > MAX_QUESTION_CHARS:
         return JsonResponse(
             {"error": f"Question is longer than {MAX_QUESTION_CHARS} characters"}, status=400
+        )
+
+    if not limits.allow_client(request):
+        return JsonResponse(
+            {"error": "Too many questions from this client. Try again later."}, status=429
         )
 
     answer = answering.answer_question(source, question)

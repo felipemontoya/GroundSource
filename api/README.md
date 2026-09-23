@@ -45,9 +45,34 @@ page uses to refer to it in running text. It is a rendering label only: it
 is not sent to the model, and retrieval searches the question as asked,
 never with the nickname added.
 
-Commands: `ingest_source`, `verify_anchors`, `embed_source`, `label_source`.
-The first two are free and need no key; the third costs money; the last
-changes only a source's title, edition or nickname. That split is deliberate —
+Commands: `ingest_source`, `verify_anchors`, `embed_source`, `label_source`,
+`show_usage`. The first two are free and need no key; the third costs
+money; `label_source` changes only a source's title, edition or nickname;
+`show_usage` prints the daily model calls, refusals and tokens that the
+spend cap is calibrated against.
+
+## Public access
+
+Each page in `../pages/` is a static site on its own origin, so the API
+answers cross-origin requests from the origins in `CORS_ALLOWED_ORIGINS`
+(`django-cors-headers`, configured from settings only) and from no others.
+
+Two limits keep a public endpoint from spending more than it was given
+(`grounding/limits.py`):
+
+- **Per client:** `ASK_PER_CLIENT_LIMIT` questions per
+  `ASK_PER_CLIENT_WINDOW_SECONDS`, counted in the process cache under a
+  salted hash of the address — never the address itself. Over the limit
+  the endpoint answers `429`.
+- **Per day:** `ASK_DAILY_MODEL_LIMIT` model calls per UTC day, counted in
+  the database (`DailyUsage`) so a restart does not reset it. Over the limit
+  the endpoint still answers, retrieval-only: the matching passages, no
+  generated text, and a reason saying so.
+
+Both are `0` (off) locally. The deployed values live in `../ops/tofu/`.
+
+A deployment that hands out a connection string sets `DATABASE_URL`, which
+takes precedence over the `POSTGRES_*` variables. That split is deliberate —
 see `../dev/README.md`.
 
 One app is not the answer to the open decision in `../AGENTS.md` about how

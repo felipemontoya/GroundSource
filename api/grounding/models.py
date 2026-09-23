@@ -219,3 +219,29 @@ class Embedding(models.Model):
 
     def __str__(self) -> str:
         return f"{self.unit} [{self.model}]"
+
+
+class DailyUsage(models.Model):
+    """How much model generation one UTC day has used, and how much was refused.
+
+    This is the spend cap's memory. It lives in the database, not in a
+    process cache, so that a restart or a redeploy does not hand out a fresh
+    day's budget. It holds counts only: no question, no client, nothing that
+    identifies who asked (see docs/planning/adversarial-review.md §9, "do not
+    store conversations by default").
+    """
+
+    day = models.DateField(primary_key=True)
+    model_calls = models.IntegerField(default=0)
+    refused_calls = models.IntegerField(
+        default=0, help_text="Questions answered retrieval-only because the day's cap was reached."
+    )
+    input_tokens = models.BigIntegerField(default=0)
+    output_tokens = models.BigIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-day"]
+        verbose_name_plural = "daily usage"
+
+    def __str__(self) -> str:
+        return f"{self.day}: {self.model_calls} calls"

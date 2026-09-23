@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 
-from . import llm, retrieval, spans
+from . import limits, llm, retrieval, spans
 from .models import Source, Unit
 
 logger = logging.getLogger(__name__)
@@ -226,6 +226,21 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
             notes=notes,
         )
 
+    if not limits.reserve_model_call():
+        # The day's budget is spent. Degrade to what costs nothing, the
+        # passages themselves, rather than to an error: reading the document
+        # is still possible, and that is the point of the tool.
+        notes.append("The daily limit on generated answers was reached. The extracts below are the raw retrieval result.")
+        return Answer(
+            source=source,
+            question=question,
+            abstained=True,
+            abstention_reason="The daily limit on generated answers has been reached; generation resumes tomorrow (UTC).",
+            claims=[],
+            retrieved=units,
+            notes=notes,
+        )
+
     prompt = (
         f"{_render_document(source)}\n\n"
         f"Question: {question}\n\n"
@@ -247,6 +262,8 @@ def answer_question(source: Source, question: str, *, top_k: int | None = None) 
             retrieved=units,
             notes=notes,
         )
+
+    limits.record_tokens(completion.input_tokens, completion.output_tokens)
 
     claims, validation_notes = _validate(source, units, completion.payload)
     notes.extend(validation_notes)

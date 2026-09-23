@@ -11,6 +11,7 @@ configuration contract.
 
 import os
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,17 +38,52 @@ if not DEBUG and SECRET_KEY == "dev-only-insecure-key-do-not-deploy":
     raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is off")
 
 ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,api")
+# Render sets this to the service's own onrender.com name, which depends on
+# whether the name was free when the service was created. Taking it from
+# the platform avoids guessing it in ops/.
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.postgres",
     "django.contrib.staticfiles",
+    "corsheaders",
     "grounding",
 ]
 
 MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    # Before CommonMiddleware, so that preflight responses and redirects
+    # carry the CORS headers too.
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# --- cross-origin access ---------------------------------------------------
+# Each page in pages/ is a static site on its own origin, and every one of
+# them calls this one backend. The list of origins allowed to do that is
+# configuration, not code: adding a page is an environment change. Nothing
+# is allowed by default, and no credentials cross origins — the API has no
+# session to protect.
+CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOW_METHODS = ["GET", "POST", "OPTIONS"]
+CORS_ALLOW_CREDENTIALS = False
+
+# --- behind a TLS-terminating proxy -----------------------------------------
+# In deployment the platform terminates TLS and forwards plain HTTP with
+# X-Forwarded-Proto. Trusted only when DEBUG is off, i.e. never on a laptop
+# where nothing in front would overwrite a forged header.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# HSTS covers this host only. No includeSubDomains or preload: the API
+# lives under a personal domain whose other names are not this project's.
+# No SECURE_SSL_REDIRECT either: the platform's edge redirects to HTTPS
+# before a request reaches Django, and its health checks arrive as HTTP.
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "0"))
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "no-referrer"
 
 ROOT_URLCONF = "groundsource.urls"
 
@@ -63,8 +99,14 @@ TEMPLATES = [
 ASGI_APPLICATION = "groundsource.asgi.application"
 WSGI_APPLICATION = "groundsource.wsgi.application"
 
-DATABASES = {
-    "default": {
+def _database() -> dict:
+    """POSTGRES_* locally; DATABASE_URL where the platform hands out a URL.
+
+    Render exposes its database as a connection string and not as separate
+    fields, so a deployment sets DATABASE_URL and it wins. Parsed with the
+    standard library: a dependency for five fields is not worth its audit.
+    """
+    config = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("POSTGRES_DB", "groundsource"),
         "USER": os.environ.get("POSTGRES_USER", "groundsource"),
@@ -73,7 +115,20 @@ DATABASES = {
         "PORT": os.environ.get("POSTGRES_PORT", "5432"),
         "CONN_MAX_AGE": 60,
     }
-}
+    url = os.environ.get("DATABASE_URL", "")
+    if url:
+        parsed = urlsplit(url)
+        config.update(
+            NAME=unquote(parsed.path.lstrip("/")),
+            USER=unquote(parsed.username or ""),
+            PASSWORD=unquote(parsed.password or ""),
+            HOST=parsed.hostname or "",
+            PORT=str(parsed.port or 5432),
+        )
+    return config
+
+
+DATABASES = {"default": _database()}
 
 # Spanish first, but the interface language is the page's concern, not the
 # API's; this only affects Django's own messages.
@@ -108,6 +163,20 @@ SOURCES_DIR = Path(os.environ.get("SOURCES_DIR", "/sources"))
 # RETRIEVAL_TOP_K survive into the prompt.
 RETRIEVAL_CANDIDATES = int(os.environ.get("RETRIEVAL_CANDIDATES", "30"))
 RETRIEVAL_TOP_K = int(os.environ.get("RETRIEVAL_TOP_K", "6"))
+
+# --- usage limits ----------------------------------------------------------
+# See grounding/limits.py. The daily cap on model calls is what holds the
+# bill; 0 disables a limit, which is the local default and never the
+# deployed one.
+ASK_DAILY_MODEL_LIMIT = int(os.environ.get("ASK_DAILY_MODEL_LIMIT", "0"))
+ASK_PER_CLIENT_LIMIT = int(os.environ.get("ASK_PER_CLIENT_LIMIT", "0"))
+ASK_PER_CLIENT_WINDOW_SECONDS = int(os.environ.get("ASK_PER_CLIENT_WINDOW_SECONDS", "3600"))
+
+# The request header holding the real client address, set by the proxy in
+# front. Empty means REMOTE_ADDR. Behind Render it is True-Client-IP. A
+# header the proxy does not overwrite is forgeable, so this must name one it
+# does.
+CLIENT_IP_HEADER = os.environ.get("CLIENT_IP_HEADER", "")
 
 LOGGING = {
     "version": 1,
