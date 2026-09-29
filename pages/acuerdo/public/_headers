@@ -1,0 +1,18 @@
+# Response headers for Cloudflare Pages, which reads this file from the
+# build output (Vite copies public/ into dist/ unchanged).
+#
+# The build emits no inline script or style, so 'self' is enough for both.
+# connect-src allows any https origin rather than naming the API: the API's
+# address is set once, in VITE_API_BASE_URL at build time, and a second copy
+# here would break the page silently the day it changes.
+
+/*
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https:; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+
+# Vite puts a content hash in every asset name, so an asset never changes
+# under the same URL.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

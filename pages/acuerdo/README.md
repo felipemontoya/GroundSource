@@ -27,6 +27,11 @@ as in `../web/`.
 VITE_API_BASE_URL=https://groundsource.projects.felipemontoya.co npm run build
 ```
 
-The output is `dist/`. The backend must list this page's origin in
+The output is `dist/`, including `public/_headers`, which Cloudflare Pages
+applies as response headers: a strict content security policy and
+long-lived caching for the hashed assets. The build emits no inline script
+or style; keep it that way, or the policy blocks it.
+
+The backend must list this page's origin in
 `CORS_ALLOWED_ORIGINS`, and `src/document.ts` must name the slug the
 agreement was ingested under in that backend.
