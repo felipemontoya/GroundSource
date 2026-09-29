@@ -29,6 +29,11 @@ resource "cloudflare_pages_project" "acuerdo" {
   }
 
   deployment_configs = {
+    # Previews are off (preview_deployment_setting), but Cloudflare refuses
+    # the project unless fail_open matches the production default here.
+    preview = {
+      fail_open = true
+    }
     production = {
       env_vars = {
         NODE_VERSION      = { type = "plain_text", value = "22" }
