@@ -58,12 +58,16 @@ itself. Do them once, in this order.
    bare `not found`. `GET https://api.render.com/v1/owners` lists the right
    one.
 3. **Cloudflare.**
-   - Install the Cloudflare Pages GitHub app on the repository (Workers &
-     Pages → Create → Pages → Connect to Git). A Pages project sourced from
-     GitHub cannot be created until the app has access.
-   - Create an API token with *Account → Cloudflare Pages: Edit*; put it in
-     `CLOUDFLARE_API_TOKEN`, and the account id in
-     `TF_VAR_cloudflare_account_id`.
+   - Give Cloudflare's GitHub app access to the repository: install
+     <https://github.com/apps/cloudflare-workers-and-pages> and select it.
+     A Pages project sourced from GitHub cannot be created until the app
+     has access. The dashboard's own "Connect to Git" wizard also installs
+     it, but its last screen deploys a Worker: leave it before *Deploy* —
+     OpenTofu creates the Pages project.
+   - Create an API token (profile → API Tokens → Custom token) with
+     *Account → Cloudflare Pages → Edit* on this account; put it in
+     `CLOUDFLARE_API_TOKEN`, and the account id (the hex segment in any
+     dashboard URL) in `TF_VAR_cloudflare_account_id`.
    - Enable R2, create the bucket `groundsource-tofu-state`, and an R2 API
      token with *Object Read & Write* on that bucket only. Its keys go in
      `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, and
